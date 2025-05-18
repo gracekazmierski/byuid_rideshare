@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "527415309529",
+    "project_id": "byuirideshare",
+    "storage_bucket": "byuirideshare.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:527415309529:android:96908e26b8b7111034bac8",
+        "android_client_info": {
+          "package_name": "com.example.byui_rideshare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-tJ6PwtYBQbEKhVxIDQ8g2cIWvxAx5L4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
