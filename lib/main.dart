@@ -36,6 +36,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true, // Recommended for modern Material Design
       ),
+
+      // created routes so we can return to the homepage...
+      initialRoute: '/', // Starting screen
+      routes: {
+        '/': (context) => const MyHomePage(title: 'BYU-I Rideshare'),
+        '/login': (context) => const LoginPage(),
+      },
+
       // Set the home page to your welcome screen
       home: const MyHomePage(title: 'BYU-I Rideshare'),
     );

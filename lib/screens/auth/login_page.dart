@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 
+import '../../models/user_profile.dart';
+import '../../services/user_service.dart';
+
+
 // Keep any other imports
 
 // Your StatefulWidget and State class definitions for LoginPage
@@ -15,6 +19,8 @@ class _LoginPageState extends State<LoginPage> {
   // Controllers to get text from the input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  bool _isDriver = false;
 
   // Dispose controllers when the widget is removed
   @override
@@ -33,10 +39,28 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
       print('User signed up: ${userCredential.user!.email}');
+
+      User? user = userCredential.user;
+      if (user != null) {
+        // Create a UserProfile object
+        UserProfile profile = UserProfile(
+          uid: user.uid,
+          name: 'New User',  // You can replace this with a TextField input if you add one
+          isDriver: _isDriver,   // Default for now
+          phoneNumber: '',   // Optional, fill in if you collect phone number
+        );
+
+        // Save the profile to Firestore
+        await UserService.saveUserProfile(profile);
+        print('UserProfile saved after sign-up');
+      }
+
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sign up successful!')),
       );
       // TODO: Navigate after sign up
+      Navigator.pushReplacementNamed(context, '/home');
 
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
@@ -81,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
       // TODO: Navigate to home page after successful login
       // Example navigation after success:
       // Navigator.pushReplacementNamed(context, '/home'); // Assuming you have a route named '/home'
-
+      Navigator.pushReplacementNamed(context, '/home');
 
     } on FirebaseAuthException catch (e) {
       // Handle specific Firebase Auth errors during login
@@ -148,6 +172,22 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
               ),
               const SizedBox(height: 24.0),
+
+              // IsDriver checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: _isDriver,
+                    onChanged: (value) {
+                      setState(() {
+                        _isDriver = value ?? false;
+                      });
+                    },
+                  ),
+                  const Text('I am a driver'),
+                ],
+              ),
+
 
               // Sign In Button - Call the _signIn function when pressed
               ElevatedButton(
