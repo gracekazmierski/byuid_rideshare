@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
       },
 
       // Set the home page to your welcome screen
-      home: const MyHomePage(title: 'BYU-I Rideshare'),
+      // home: const MyHomePage(title: 'BYU-I Rideshare'),
     );
   }
 }
