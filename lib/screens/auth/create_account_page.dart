@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/user_profile.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // For navigation after sign-up
+import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // For profile setup after sign-up
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -16,6 +17,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isDriver = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,6 +28,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   // --- Function to handle User Sign Up ---
   Future<void> _signUp() async {
+    // --- Set loading state to true ---
+    if (!mounted) return; // Check if widget is still in the tree
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -49,18 +57,20 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
           password: _passwordController.text.trim(),
         );
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Account created successfully!')),
         );
 
         // Navigate to the home page (via AuthWrapper) and clear navigation stack
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
               (Route<dynamic> route) => false,
         );
       }
 
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return; // Check if widget is still in the tree
       String message;
       if (e.code == 'weak-password') {
         message = 'The password provided is too weak.';
@@ -74,10 +84,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         SnackBar(content: Text('Error: $message')),
       );
     } catch (e) {
+      if (!mounted) return; // Check if widget is still in the tree
       print('General Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred: $e')),
       );
+    } finally {
+      // --- Set loading state to false ---
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -128,16 +146,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       });
                     },
                   ),
-                  const Text('I am a driver'),
+                  const Text('I am a driver (initial selection)'),
                 ],
               ),
               const SizedBox(height: 24.0),
 
               // Create Account Button
-              ElevatedButton(
-                onPressed: _signUp,
-                child: const Text('Create Account'),
-              ),
+              _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+                    onPressed: _signUp,
+                    child: const Text('Create Account'),
+                  ),
               const SizedBox(height: 16.0),
 
               // Already have an account? Sign In link
