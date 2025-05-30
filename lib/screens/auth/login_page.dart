@@ -1,13 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+// lib/screens/auth/login_page.dart
+import  'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // For Google Sign-In
+import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // For navigation after login
+import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // To navigate to create account
+import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart';
 
-import '../../models/user_profile.dart';
-import '../../services/user_service.dart';
-
-
-// Keep any other imports
-
-// Your StatefulWidget and State class definitions for LoginPage
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -16,13 +14,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controllers to get text from the input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isGoogleSigningIn = false;
+  bool _isEmailSigningIn = false;
 
-  bool _isDriver = false;
-
-  // Dispose controllers when the widget is removed
   @override
   void dispose() {
     _emailController.dispose();
@@ -30,112 +26,165 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // --- Function to handle User Sign Up (Already added) ---
-  Future<void> _signUp() async {
-    // ... (keep your existing _signUp function code here) ...
+  // --- Function to handle Email/Password Sign In ---
+  Future<void> _signIn() async {
+    if (!mounted) return; // Check if widget is still in the tree
+    setState(() {
+      _isEmailSigningIn = true; // Set loading state
+    });
+
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      if (!mounted) return; // Check if widget is still in the tree)
+
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      print('User signed up: ${userCredential.user!.email}');
-
-      User? user = userCredential.user;
-      if (user != null) {
-        // Create a UserProfile object
-        UserProfile profile = UserProfile(
-          uid: user.uid,
-          name: 'New User',  // You can replace this with a TextField input if you add one
-          isDriver: _isDriver,   // Default for now
-          phoneNumber: '',   // Optional, fill in if you collect phone number
-        );
-
-        // Save the profile to Firestore
-        await UserService.saveUserProfile(profile);
-        print('UserProfile saved after sign-up');
-      }
-
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign up successful!')),
-      );
-      // TODO: Navigate after sign up
-      Navigator.pushReplacementNamed(context, '/home');
-
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        print('Error: The password provided is too weak.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: The password provided is too weak.')),
-        );
-      } else if (e.code == 'email-already-in-use') {
-        print('Error: The account already exists for that email.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: The account already exists for that email.')),
-        );
-      } else {
-        print('Firebase Auth Error: ${e.message}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign up failed: ${e.message}')),
-        );
-      }
-    } catch (e) {
-      print('General Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred: $e')),
-      );
-    }
-  }
-  // --------------------------------------------------------
-
-
-  // --- Function to handle User Sign In ---
-  Future<void> _signIn() async {
-    try {
-      // Attempt to sign in an existing user with email and password
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(), // Get email text
-        password: _passwordController.text.trim(), // Get password text
-      );
-      // Sign-in successful!
       print('User signed in: ${userCredential.user!.email}');
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign in successful!')),
+        const SnackBar(content: Text('Sign in successful!')),
       );
-      // TODO: Navigate to home page after successful login
-      // Example navigation after success:
-      // Navigator.pushReplacementNamed(context, '/home'); // Assuming you have a route named '/home'
-      Navigator.pushReplacementNamed(context, '/home');
+
+      // Navigate to the home page (via AuthWrapper) and clear navigation stack
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            (Route<dynamic> route) => false,
+      );
 
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase Auth errors during login
+      if (!mounted) return;
+      String message;
       if (e.code == 'user-not-found') {
-        print('Error: No user found for that email.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: No user found for that email.')),
-        );
+        message = 'No user found for that email.';
       } else if (e.code == 'wrong-password') {
-        print('Error: Wrong password provided for that user.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Wrong password provided for that user.')),
-        );
+        message = 'Wrong password provided for that user.';
       } else {
-        // Handle other Firebase Auth errors
-        print('Firebase Auth Error: ${e.message}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: ${e.message}')),
-        );
+        message = 'Sign in failed: ${e.message}';
       }
+      print('Firebase Auth Error: $message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $message')),
+      );
     } catch (e) {
-      // Handle other potential errors
+      if (!mounted) return;
       print('General Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred: $e')),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isEmailSigningIn = false;
+        });
+      }
     }
   }
-  // --------------------------------------
 
+  // --- Function to handle Google Sign In ---
+  Future<void> _handleGoogleSignIn() async {
+    if (!mounted) return;
+    setState(() {
+      _isGoogleSigningIn = true; // Set loading state
+    });
+
+    try {
+      // 1. Begin interactive Google Sign In process
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (!mounted) return;
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google Sign-In cancelled.')),
+        );
+        setState(() => _isGoogleSigningIn = false); // Reset loading state
+        return;
+      }
+
+      // 2. Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // 3. Create a new credential with the Google ID token and Access token
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4. Sign in to Firebase with the Google credential
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      User? user = userCredential.user;
+
+      if (!mounted) return;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google Sign-In failed. No user found.')),
+        );
+        setState(() => _isGoogleSigningIn = false); // Reset loading state
+        return;
+      }
+
+      print('Signed in with Google: ${userCredential.user?.email}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signed in with Google successfully!')),
+      );
+
+      // TODO: Check if this is a new user and save profile if needed
+      // You might want to fetch the user profile from Firestore here.
+      // If no profile exists, navigate to ProfileSetupScreen.
+      // For now, we'll assume a successful sign-in means they go to the main screen.
+      bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+      if (!mounted) return;
+
+      if (isNewUser) {
+        //If this is a new user, navigate to profile setup
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Welcome! Please complete your profile.')),
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+              (Route<dynamic> route) => false,
+        );
+      } else {
+        // If it's an existing user, navigate to the (AuthWrapper)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed in with Google successfully!')),
+        );
+        // Navigate to the home page (via AuthWrapper) and clear navigation stack
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+              (Route<dynamic> route) => false,
+        );
+      }
+
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      print('Firebase Auth Google Error: ${e.message}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In failed: ${e.message}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      print('General Google Sign-In Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred during Google Sign-In: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleSigningIn = false; // Reset loading state
+        });
+      }
+    }
+  }
+
+  void _navigateToCreateAccount() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const CreateAccountPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,10 +200,10 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // Email Input Field - Link to the controller
+              // Email Input Field
               TextField(
                 controller: _emailController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
                 ),
@@ -162,10 +211,10 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16.0),
 
-              // Password Input Field - Link to the controller
+              // Password Input Field
               TextField(
                 controller: _passwordController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(),
                 ),
@@ -173,44 +222,28 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 24.0),
 
-              // IsDriver checkbox
-              Row(
-                children: [
-                  Checkbox(
-                    value: _isDriver,
-                    onChanged: (value) {
-                      setState(() {
-                        _isDriver = value ?? false;
-                      });
-                    },
-                  ),
-                  const Text('I am a driver'),
-                ],
-              ),
-
-
-              // Sign In Button - Call the _signIn function when pressed
-              ElevatedButton(
-                onPressed: _signIn, // <-- Call the _signIn function here
-                child: const Text('Sign In'),
-              ),
+              // Sign In Button
+              _isEmailSigningIn
+              ? const Center(child: CircularProgressIndicator())
+              : ElevatedButton(
+                  onPressed: _signIn,
+                  child: const Text('Sign In'),
+                ),
               const SizedBox(height: 16.0),
 
-              // Google Sign In Button (Placeholder)
-              OutlinedButton(
-                onPressed: () {
-                  // TODO: Implement Google Sign-In logic
-                  print('Google Sign In button pressed');
-                },
-                child: const Text('Sign In with Google'),
-              ),
-
+              // Sign In with Google Button
+              _isGoogleSigningIn
+              ? const Center(child: CircularProgressIndicator())
+              : OutlinedButton(
+                  onPressed: _handleGoogleSignIn, // Calls the Google Sign-In function
+                  child: const Text('Sign In with Google'),
+                ),
               const SizedBox(height: 24.0),
 
-              // Sign Up Text Button - Calls the _signUp function
+              // Navigate to Create Account Page
               TextButton(
-                onPressed: _signUp, // Calls the sign-up function
-                child: const Text('Don\'t have an account? Sign Up'),
+                onPressed: _navigateToCreateAccount,
+                child: const Text('Create Account'),
               ),
             ],
           ),

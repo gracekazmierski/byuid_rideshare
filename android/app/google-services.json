@@ -12,7 +12,20 @@
           "package_name": "com.example.byui_rideshare"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "527415309529-oab4bc7g0hb7atr0oa2h5k3rcaob4olg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.byui_rideshare",
+            "certificate_hash": "f39e4e2519de6a5fc3d0c37e272e031c3014221b"
+          }
+        },
+        {
+          "client_id": "527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA-tJ6PwtYBQbEKhVxIDQ8g2cIWvxAx5L4"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "527415309529-hkvt11stmiju3hcvt0qmb2q1n8l8867d.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.byuiRideshare"
+              }
+            }
+          ]
         }
       }
     }
