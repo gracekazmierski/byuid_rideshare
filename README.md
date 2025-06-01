@@ -4,16 +4,6 @@
 
 This document provides a direct, step-by-step guide on how to implement and use a Git branching system for our team. Following these instructions will significantly improve collaboration, minimize merge conflicts, and help maintain a stable codebase.
 
-## Why You MUST Use a Branching System
-
-Using a proper branching system is essential for our team's success because it:
-
-* **Eliminates Main Branch Conflicts:** Each team member works in their own isolated "feature branch." Resolve conflicts in your dedicated branch, not on the `main` development line.
-* **Isolates Your Work:** Develop new features or fix bugs without incomplete work from others interfering with your progress.
-* **Maintains a Stable `main` Branch:** Your `main` branch will always hold stable, production-ready code.
-* **Facilitates Code Review:** Easily review changes before they are merged into the main codebase, improving overall code quality.
-* **Simplifies Rollbacks:** If a feature introduces a bug, quickly revert just that feature's changes without affecting other completed work.
-
 ## Recommended Strategy: Feature Branch Workflow
 
 For our team's size, the **Feature Branch Workflow** is the simplest and most effective strategy.
