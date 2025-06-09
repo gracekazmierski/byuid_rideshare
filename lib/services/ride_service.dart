@@ -24,6 +24,33 @@ class RideService {
     }
   }
 
+  static Future<void> cancelRide(String rideId) async {
+    final rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
+    await rideRef.delete();
+  }
+
+  static Future<void> removePassenger(String rideId, String passengerUid) async {
+    DocumentReference rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(rideRef);
+      if (!snapshot.exists) return;
+
+      List joinedUsers = List.from(snapshot['joinedUserUids']);
+      int availableSeats = snapshot['availableSeats'];
+      bool isFull = snapshot['isFull'];
+
+      joinedUsers.remove(passengerUid);
+      availableSeats += 1;
+      isFull = false;
+
+      transaction.update(rideRef, {
+        'joinedUserUids': joinedUsers,
+        'availableSeats': availableSeats,
+        'isFull': isFull,
+      });
+    });
+  }
+
   /// Fetches a stream of ride listings ordered by rideDate.
   /// This provides real-time updates when new rides are added or existing ones change.
   static Stream<List<Ride>> fetchRideListings() {
