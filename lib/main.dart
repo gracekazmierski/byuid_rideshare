@@ -1,7 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'services/firebase_options.dart';
 import 'package:byui_rideshare/screens/auth/auth_wrapper.dart';
 import 'package:byui_rideshare/screens/auth/login_page.dart';
 import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // Make sure this is imported!
