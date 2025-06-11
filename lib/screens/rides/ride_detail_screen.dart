@@ -17,7 +17,7 @@ class RideDetailScreen extends StatefulWidget {
 
 class _RideDetailScreenState extends State<RideDetailScreen> {
   User? _currentUser;
-  bool _isJoining = false; // To manage button state
+  bool _isJoining = false;
 
   @override
   void initState() {
@@ -39,7 +39,7 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
     final String? errorMessage = await RideService.joinRide(widget.ride.id, _currentUser!.uid);
 
-    if (mounted) { // Check if the widget is still in the tree before setState
+    if (mounted) {
       setState(() {
         _isJoining = false;
       });
@@ -58,19 +58,18 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Use a StreamBuilder to get real-time updates for this specific ride
     return StreamBuilder<Ride>(
       stream: RideService.getRideStream(widget.ride.id),
       builder: (context, snapshot) {
-        Ride currentRide = widget.ride; // Fallback to initial ride if stream not ready
+        Ride currentRide = widget.ride;
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Can show a loading indicator or initial data
+          // Show loading spinner
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          // Handle error, e.g., show a message or use initial data
           print('Error fetching ride stream: ${snapshot.error}');
         } else if (snapshot.hasData) {
-          currentRide = snapshot.data!; // Use real-time data if available
+          currentRide = snapshot.data!;
         }
 
         bool rideIsFull = currentRide.isFull || currentRide.availableSeats <= 0;
@@ -91,12 +90,13 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
-                _buildDetailRow('Date:', DateFormat('EEE, MMM d,yyyy').format(currentRide.rideDate.toDate())),
+                _buildDetailRow('Date:', DateFormat('EEE, MMM d, yyyy').format(currentRide.rideDate.toDate())),
                 _buildDetailRow('Time:', DateFormat('h:mm a').format(currentRide.rideDate.toDate())),
                 _buildDetailRow('Available Seats:', currentRide.availableSeats.toString()),
                 _buildDetailRow('Fare:', '\$${currentRide.fare?.toStringAsFixed(2) ?? 'N/A'}'),
                 _buildDetailRow('Driver:', currentRide.driverName),
                 _buildDetailRow('Status:', rideIsFull ? 'Full' : 'Available'),
+
                 if (hasJoined)
                   const Padding(
                     padding: EdgeInsets.only(top: 8.0),
@@ -105,29 +105,76 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                       style: TextStyle(fontStyle: FontStyle.italic, color: Colors.blue),
                     ),
                   ),
-                if (isDriver)
+
+                if (isDriver) ...[
                   const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
+                    padding: EdgeInsets.only(top: 16.0),
                     child: Text(
                       'You are the driver of this ride.',
                       style: TextStyle(fontStyle: FontStyle.italic, color: Colors.purple),
                     ),
                   ),
-                const Spacer(), // Pushes the button to the bottom
+                  const SizedBox(height: 20),
+                  const Text('Passengers:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+
+                  ...currentRide.joinedUserUids.map((uid) => ListTile(
+                        title: Text(uid),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove_circle, color: Colors.red),
+                          onPressed: () async {
+                            await RideService.removePassenger(currentRide.id, uid);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Passenger removed.')),
+                            );
+                          },
+                        ),
+                      )),
+
+                  const SizedBox(height: 10),
+
+                  Center(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Cancel Ride'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () async {
+                        await RideService.cancelRide(currentRide.id);
+                        if (mounted) {
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Ride canceled.')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+
+                const Spacer(),
+
                 Center(
                   child: ElevatedButton(
                     onPressed: (rideIsFull || _isJoining || hasJoined || isDriver) ? null : _joinRide,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: (rideIsFull || hasJoined || isDriver) ? Colors.grey : Theme.of(context).primaryColor,
+                      backgroundColor: (rideIsFull || hasJoined || isDriver)
+                          ? Colors.grey
+                          : Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     ),
                     child: _isJoining
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
-                      isDriver ? 'Your Ride' : (hasJoined ? 'Already Joined' : (rideIsFull ? 'Ride Full' : 'Join Ride')),
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                            isDriver
+                                ? 'Your Ride'
+                                : (hasJoined
+                                    ? 'Already Joined'
+                                    : (rideIsFull ? 'Ride Full' : 'Join Ride')),
+                            style: const TextStyle(fontSize: 18),
+                          ),
                   ),
                 ),
               ],
@@ -145,7 +192,7 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 150, // Adjust width as needed for alignment
+            width: 150,
             child: Text(
               label,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
