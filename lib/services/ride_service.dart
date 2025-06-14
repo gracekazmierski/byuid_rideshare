@@ -77,6 +77,17 @@ class RideService {
     });
   }
 
+  /// Fetches a list of joined rides based on the userID
+  static Stream<List<Ride>> fetchJoinedRideListings(String? passengerUid) {
+    return FirebaseFirestore.instance
+        .collection('rides')
+        .where('joinedUserUids', arrayContains: passengerUid)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Ride.fromFirestore(doc)).toList();
+    });
+  }
+
   /// Claims a seat on a ride using a Firestore transaction for atomicity.
   /// Returns null on success, or an error message string.
   static Future<String?> joinRide(String rideId, String userId) async {
