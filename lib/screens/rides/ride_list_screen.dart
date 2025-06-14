@@ -1,12 +1,12 @@
 // lib/screens/rides/ride_list_screen.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
-import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart'; // Import the new detail screen
+import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
+import 'package:byui_rideshare/screens/rides/my_rides_screen.dart';
 
 class RideListScreen extends StatefulWidget {
   const RideListScreen({super.key});
@@ -18,10 +18,23 @@ class RideListScreen extends StatefulWidget {
 class _RideListScreenState extends State<RideListScreen> {
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('BYU-I Rideshare Bulletin Board'),
         actions: [
+          if (currentUser != null)
+            IconButton(
+              icon: const Icon(Icons.directions_car_filled_outlined), // Choose an appropriate icon
+              tooltip: 'My Posted Rides',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyRidesScreen()),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -40,7 +53,9 @@ class _RideListScreenState extends State<RideListScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No rides available. Be the first to post one!'));
+            return const Center(
+              child: Text('No rides available. Be the first to post one!'),
+            );
           }
 
           final rides = snapshot.data!;
@@ -50,16 +65,21 @@ class _RideListScreenState extends State<RideListScreen> {
             itemCount: rides.length,
             itemBuilder: (context, index) {
               final ride = rides[index];
-              final bool isRideFull = ride.isFull || ride.availableSeats <= 0; // Check if full
+              final bool isRideFull =
+                  ride.isFull || ride.availableSeats <= 0; // Check if full
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
-                child: InkWell( // Make the card tappable
+                child: InkWell(
+                  // Make the card tappable
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => RideDetailScreen(ride: ride), // Navigate to detail screen
+                        builder:
+                            (context) => RideDetailScreen(
+                              ride: ride,
+                            ), // Navigate to detail screen
                       ),
                     );
                   },
@@ -82,7 +102,10 @@ class _RideListScreenState extends State<RideListScreen> {
                             ),
                             if (isRideFull) // Display "FULL" tag if applicable
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(4),
@@ -117,11 +140,17 @@ class _RideListScreenState extends State<RideListScreen> {
                         ),
                         Text(
                           'Driver: ${ride.driverName}',
-                          style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                         Text(
                           'Posted: ${DateFormat('MMM d, h:mm a').format(ride.postCreationTime.toDate())}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -134,7 +163,10 @@ class _RideListScreenState extends State<RideListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateRideScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateRideScreen()),
+          );
         },
         label: const Text('Offer a Ride'),
         icon: const Icon(Icons.add),
