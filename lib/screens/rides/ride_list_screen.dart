@@ -17,6 +17,26 @@ class RideListScreen extends StatefulWidget {
 }
 
 class _RideListScreenState extends State<RideListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to changes in the search bar and update the search query state
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // Clean up the controller
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,21 +53,48 @@ class _RideListScreenState extends State<RideListScreen> {
               child: Text(
                   'My Joined Rides',
                   style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.black
-                )
-              )
+                      fontSize: 20,
+                      color: Colors.black
+                  ),
+              ),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
             },
-          )
+          ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by origin or destination...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                    },
+             )
+            : null,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+    ),
+      filled: true,
+      fillColor: Colors.white,
+
+              )
+            )
+          )
+        )
       ),
       body: StreamBuilder<List<Ride>>(
-        stream: RideService.fetchRideListings(),
+        stream: RideService.fetchRideListings(searchQuery: _searchQuery),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -53,16 +53,32 @@ class RideService {
 
   /// Fetches a stream of ride listings ordered by rideDate.
   /// This provides real-time updates when new rides are added or existing ones change.
-  static Stream<List<Ride>> fetchRideListings() {
+  static Stream<List<Ride>> fetchRideListings({String? searchQuery}) {
     return ridesCollection
         .orderBy('rideDate', descending: false) // Order by date, earliest first
         .snapshots() // Get a stream of query snapshots (real-time updates)
         .map((snapshot) {
+          // Convert each document snapshot into a Ride object and collect them into a List<Ride>
+          List<Ride> rides = snapshot.docs
+              .map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+              .toList();
+
+          // If a search query is provided, filter the list of rides
+          //The query is matched against the "origin" and "destination"
+          if (searchQuery != null && searchQuery.isNotEmpty) {
+            final lowerQuery = searchQuery.toLowerCase();
+            rides = rides.where((ride) =>
+              ride.origin.toLowerCase().contains(lowerQuery) ||
+              ride.destination.toLowerCase().contains(lowerQuery)).toList(); // Make lowercase so there are no spell search errors.
+          }
+
+          return rides;
+
       // Map each snapshot to a List<Ride>
-      return snapshot.docs
-          .map((doc) =>
-          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
-          .toList();
+      // return snapshot.docs
+      //     .map((doc) =>
+      //     Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+      //     .toList();
     });
   }
 
