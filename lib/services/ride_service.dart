@@ -66,6 +66,20 @@ class RideService {
     });
   }
 
+  /// Fetches a stream of ride listings for a specific driver, ordered by rideDate.
+  static Stream<List<Ride>> fetchDriverRideListings(String driverUid) {
+    return ridesCollection
+        .where('driverUid', isEqualTo: driverUid) // Filter by driverUid
+        .orderBy('rideDate', descending: false) // Optional: order by date
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) =>
+          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+          .toList();
+    });
+  }
+
   /// Fetches a stream for a single ride by its ID for real-time updates.
   static Stream<Ride> getRideStream(String rideId) {
     return ridesCollection.doc(rideId).snapshots().map((doc) {

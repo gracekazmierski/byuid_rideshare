@@ -1,7 +1,6 @@
 // lib/screens/auth/auth_wrapper.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:byui_rideshare/screens/auth/login_page.dart';
 import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Grace's screen
 import 'package:byui_rideshare/main.dart'; // To access MyHomePage if desired
 
@@ -17,17 +16,13 @@ class AuthWrapper extends StatelessWidget {
         // Show a loading indicator while checking auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
         // If there's an error with the stream
         if (snapshot.hasError) {
           return const Scaffold(
-            body: Center(
-              child: Text('Error checking authentication state.'),
-            ),
+            body: Center(child: Text('Error checking authentication state.')),
           );
         }
 
