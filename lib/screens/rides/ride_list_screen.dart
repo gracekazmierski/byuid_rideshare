@@ -5,8 +5,12 @@ import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
+
 import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
 import 'package:byui_rideshare/screens/rides/my_rides_screen.dart';
+import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart'; // Import the new detail screen
+import 'package:byui_rideshare/screens/rides/my_joined_rides_screen.dart';
+
 
 class RideListScreen extends StatefulWidget {
   const RideListScreen({super.key});
@@ -35,12 +39,28 @@ class _RideListScreenState extends State<RideListScreen> {
                 );
               },
             ),
+
+          TextButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MyJoinedRidesScreen())
+                );
+              },
+              child: Text(
+                  'My Joined Rides',
+                  style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.black
+                )
+              )
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
             },
-          ),
+          )
         ],
       ),
       body: StreamBuilder<List<Ride>>(
