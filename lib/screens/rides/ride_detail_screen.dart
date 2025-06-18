@@ -1,6 +1,7 @@
 // lib/screens/rides/ride_detail_screen.dart
 import 'package:flutter/material.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/models/ride.dart';
@@ -50,6 +51,10 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     });
 
     final message = _msgController.text.trim();
+    final String? errorMessage = await RideService.joinRide(
+      widget.ride.id,
+      _currentUser!.uid,
+    );
 
     try {
       await RideService.requestToJoinRide(
@@ -95,13 +100,14 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
         }
 
         bool rideIsFull = currentRide.isFull || currentRide.availableSeats <= 0;
-        bool hasJoined = _currentUser != null && currentRide.joinedUserUids.contains(_currentUser!.uid);
-        bool isDriver = _currentUser != null && currentRide.driverUid == _currentUser!.uid;
+        bool hasJoined =
+            _currentUser != null &&
+            currentRide.joinedUserUids.contains(_currentUser!.uid);
+        bool isDriver =
+            _currentUser != null && currentRide.driverUid == _currentUser!.uid;
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Ride Details'),
-          ),
+          appBar: AppBar(title: const Text('Ride Details')),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -109,13 +115,30 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
               children: [
                 Text(
                   '${currentRide.origin} to ${currentRide.destination}',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                _buildDetailRow('Date:', DateFormat('EEE, MMM d, yyyy').format(currentRide.rideDate.toDate())),
-                _buildDetailRow('Time:', DateFormat('h:mm a').format(currentRide.rideDate.toDate())),
-                _buildDetailRow('Available Seats:', currentRide.availableSeats.toString()),
-                _buildDetailRow('Fare:', '\$${currentRide.fare?.toStringAsFixed(2) ?? 'N/A'}'),
+                _buildDetailRow(
+                  'Date:',
+                  DateFormat(
+                    'EEE, MMM d, yyyy',
+                  ).format(currentRide.rideDate.toDate()),
+                ),
+                _buildDetailRow(
+                  'Time:',
+                  DateFormat('h:mm a').format(currentRide.rideDate.toDate()),
+                ),
+                _buildDetailRow(
+                  'Available Seats:',
+                  currentRide.availableSeats.toString(),
+                ),
+                _buildDetailRow(
+                  'Fare:',
+                  '\$${currentRide.fare?.toStringAsFixed(2) ?? 'N/A'}',
+                ),
                 _buildDetailRow('Driver:', currentRide.driverName),
                 _buildDetailRow('Status:', rideIsFull ? 'Full' : 'Available'),
 
@@ -124,7 +147,10 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                     padding: EdgeInsets.only(top: 8.0),
                     child: Text(
                       'You have joined this ride.',
-                      style: TextStyle(fontStyle: FontStyle.italic, color: Colors.blue),
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.blue,
+                      ),
                     ),
                   ),
 
@@ -133,7 +159,10 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                     padding: EdgeInsets.only(top: 16.0),
                     child: Text(
                       'You are the driver of this ride.',
-                      style: TextStyle(fontStyle: FontStyle.italic, color: Colors.purple),
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.purple,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -246,8 +275,31 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                               const SnackBar(content: Text('Passenger removed.')),
                             );
                           },
+                  const Text(
+                    'Passengers:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+
+                  ...currentRide.joinedUserUids.map(
+                    (uid) => ListTile(
+                      title: Text(uid),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.remove_circle,
+                          color: Colors.red,
                         ),
-                      )),
+                        onPressed: () async {
+                          await RideService.removePassenger(
+                            currentRide.id,
+                            uid,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Passenger removed.')),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 10),
 
@@ -276,24 +328,36 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
                 Center(
                   child: ElevatedButton(
-                    onPressed: (rideIsFull || _isJoining || hasJoined || isDriver) ? null : _joinRide,
+                    onPressed:
+                        (rideIsFull || _isJoining || hasJoined || isDriver)
+                            ? null
+                            : _joinRide,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: (rideIsFull || hasJoined || isDriver)
-                          ? Colors.grey
-                          : Theme.of(context).primaryColor,
+                      backgroundColor:
+                          (rideIsFull || hasJoined || isDriver)
+                              ? Colors.grey
+                              : Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 15,
+                      ),
                     ),
-                    child: _isJoining
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            isDriver
-                                ? 'Your Ride'
-                                : (hasJoined
-                                    ? 'Already Joined'
-                                    : (rideIsFull ? 'Ride Full' : 'Join Ride')),
-                            style: const TextStyle(fontSize: 18),
-                          ),
+                    child:
+                        _isJoining
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : Text(
+                              isDriver
+                                  ? 'Your Ride'
+                                  : (hasJoined
+                                      ? 'Already Joined'
+                                      : (rideIsFull
+                                          ? 'Ride Full'
+                                          : 'Join Ride')),
+                              style: const TextStyle(fontSize: 18),
+                            ),
                   ),
                 ),
               ],
@@ -317,12 +381,7 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 16))),
         ],
       ),
     );

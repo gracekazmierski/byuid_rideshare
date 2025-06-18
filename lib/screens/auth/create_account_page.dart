@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/user_profile.dart';
 import 'package:byui_rideshare/services/user_service.dart';
-import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // For navigation after sign-up
+// For navigation after sign-up
 import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // For profile setup after sign-up
 
 class CreateAccountPage extends StatefulWidget {
@@ -35,10 +35,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     });
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
       print('User signed up: ${userCredential.user!.email}');
 
       User? user = userCredential.user;
@@ -65,10 +66,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         // Navigate to the home page (via AuthWrapper) and clear navigation stack
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-              (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
         );
       }
-
     } on FirebaseAuthException catch (e) {
       if (!mounted) return; // Check if widget is still in the tree
       String message;
@@ -80,15 +80,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         message = 'Sign up failed: ${e.message}';
       }
       print('Firebase Auth Error: $message');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $message')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $message')));
     } catch (e) {
       if (!mounted) return; // Check if widget is still in the tree
       print('General Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('An error occurred: $e')));
     } finally {
       // --- Set loading state to false ---
       if (mounted) {
@@ -153,8 +153,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
               // Create Account Button
               _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
                     onPressed: _signUp,
                     child: const Text('Create Account'),
                   ),

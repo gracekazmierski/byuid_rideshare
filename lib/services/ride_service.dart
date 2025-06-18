@@ -60,12 +60,42 @@ class RideService {
 
   /// Fetches a stream of ride listings ordered by rideDate.
   /// This provides real-time updates when new rides are added or existing ones change.
-  static Stream<List<Ride>> fetchRideListings() {
+  static Stream<List<Ride>> fetchRideListings({String? searchQuery}) {
     return ridesCollection
         .orderBy('rideDate', descending: false) // Order by date, earliest first
         .snapshots() // Get a stream of query snapshots (real-time updates)
         .map((snapshot) {
+          // Convert each document snapshot into a Ride object and collect them into a List<Ride>
+          List<Ride> rides = snapshot.docs
+              .map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+              .toList();
+
+          // If a search query is provided, filter the list of rides
+          //The query is matched against the "origin" and "destination"
+          if (searchQuery != null && searchQuery.isNotEmpty) {
+            final lowerQuery = searchQuery.toLowerCase();
+            rides = rides.where((ride) =>
+              ride.origin.toLowerCase().contains(lowerQuery) ||
+              ride.destination.toLowerCase().contains(lowerQuery)).toList(); // Make lowercase so there are no spell search errors.
+          }
+
+          return rides;
+
       // Map each snapshot to a List<Ride>
+      // return snapshot.docs
+      //     .map((doc) =>
+      //     Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+      //     .toList();
+    });
+  }
+
+  /// Fetches a stream of ride listings for a specific driver, ordered by rideDate.
+  static Stream<List<Ride>> fetchDriverRideListings(String driverUid) {
+    return ridesCollection
+        .where('driverUid', isEqualTo: driverUid) // Filter by driverUid
+        .orderBy('rideDate', descending: false) // Optional: order by date
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs
           .map((doc) =>
           Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
@@ -184,6 +214,17 @@ class RideService {
         .map((snap) => snap.docs.map((d) => RideRequest.fromMap(d.data(), d.id)).toList());
   }
   
+  /// Fetches a list of joined rides based on the userID
+  static Stream<List<Ride>> fetchJoinedRideListings(String? passengerUid) {
+    return FirebaseFirestore.instance
+        .collection('rides')
+        .where('joinedUserUids', arrayContains: passengerUid)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Ride.fromFirestore(doc)).toList();
+    });
+  }
+
   /// Claims a seat on a ride using a Firestore transaction for atomicity.
   /// Returns null on success, or an error message string.
   static Future<String?> joinRide(String rideId, String userId) async {
