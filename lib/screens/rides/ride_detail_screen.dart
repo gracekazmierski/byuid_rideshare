@@ -1,10 +1,12 @@
 // lib/screens/rides/ride_detail_screen.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
+import 'package:byui_rideshare/models/ride_request.dart';
+
 
 class RideDetailScreen extends StatefulWidget {
   final Ride ride; // The initial ride object passed from RideListScreen
@@ -18,12 +20,22 @@ class RideDetailScreen extends StatefulWidget {
 class _RideDetailScreenState extends State<RideDetailScreen> {
   User? _currentUser;
   bool _isJoining = false;
+  late final TextEditingController _msgController;
+  Set<String> _processingRequestIds = {};
 
   @override
   void initState() {
     super.initState();
     _currentUser = FirebaseAuth.instance.currentUser;
+    _msgController = TextEditingController();
   }
+
+  @override
+  void dispose() {
+    _msgController.dispose();
+    super.dispose();
+  }
+
 
   void _joinRide() async {
     if (_currentUser == null) {
@@ -37,21 +49,31 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
       _isJoining = true;
     });
 
-    final String? errorMessage = await RideService.joinRide(widget.ride.id, _currentUser!.uid);
+    final message = _msgController.text.trim();
 
-    if (mounted) {
-      setState(() {
-        _isJoining = false;
-      });
+    try {
+      await RideService.requestToJoinRide(
+        widget.ride.id,
+        _currentUser!.uid,
+        message,
+      );
 
-      if (errorMessage == null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seat claimed successfully!')),
+          const SnackBar(content: Text('Ride request sent!')),
         );
-      } else {
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to join ride: $errorMessage')),
+          SnackBar(content: Text('Error: ${e.toString()}')),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isJoining = false;
+        });
       }
     }
   }
@@ -117,6 +139,103 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   const SizedBox(height: 20),
                   const Text('Passengers:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
 
+                  const SizedBox(height: 20),
+                  const Text('Join Requests:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+
+                  StreamBuilder<List<RideRequest>>(
+                    stream: RideService.fetchRequestsForRide(currentRide.id),
+                    builder: (context, requestSnapshot) {
+                      if (requestSnapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (!requestSnapshot.hasData || requestSnapshot.data!.isEmpty) {
+                        return const Text('No pending requests.');
+                      }
+
+                      final requests = requestSnapshot.data!;
+
+                      return Column(
+                        children: requests.map((request) {
+                          final isProcessing = _processingRequestIds.contains(request.id);
+
+                          return ListTile(
+                            title: Text('User: ${request.riderUid}'),
+                            subtitle: Text(request.message),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: isProcessing
+                                      ? SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.check, color: Colors.green),
+                                  onPressed: isProcessing
+                                      ? null
+                                      : () async {
+                                          setState(() {
+                                            _processingRequestIds.add(request.id);
+                                          });
+                                          try {
+                                            await RideService.acceptRideRequest(
+                                              request.id,
+                                              currentRide.id,
+                                              request.riderUid,
+                                            );
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Request accepted.')),
+                                            );
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Error: $e')),
+                                            );
+                                          } finally {
+                                            setState(() {
+                                              _processingRequestIds.remove(request.id);
+                                            });
+                                          }
+                                        },
+                                ),
+                                IconButton(
+                                  icon: isProcessing
+                                      ? SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.close, color: Colors.red),
+                                  onPressed: isProcessing
+                                      ? null
+                                      : () async {
+                                          setState(() {
+                                            _processingRequestIds.add(request.id);
+                                          });
+                                          try {
+                                            await RideService.denyRideRequest(request.id);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Request denied.')),
+                                            );
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Error: $e')),
+                                            );
+                                          } finally {
+                                            setState(() {
+                                              _processingRequestIds.remove(request.id);
+                                            });
+                                          }
+                                        },
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+
                   ...currentRide.joinedUserUids.map((uid) => ListTile(
                         title: Text(uid),
                         trailing: IconButton(
@@ -153,7 +272,7 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   ),
                 ],
 
-                const Spacer(),
+                // possible notifications here
 
                 Center(
                   child: ElevatedButton(
