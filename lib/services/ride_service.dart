@@ -35,7 +35,7 @@ class RideService {
     await rideRef.delete();
   }
 
-  // driver can remove passengers? or is it the rider that takes themselves off?
+  // driver can remove passengers
   static Future<void> removePassenger(String rideId, String passengerUid) async {
     DocumentReference rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
     await FirebaseFirestore.instance.runTransaction((transaction) async {

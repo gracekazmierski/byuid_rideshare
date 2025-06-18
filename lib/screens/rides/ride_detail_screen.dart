@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/models/ride.dart';
+import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 
 class RideDetailScreen extends StatefulWidget {
@@ -36,24 +37,29 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
       _isJoining = true;
     });
 
-    final String? errorMessage = await RideService.joinRide(
-      widget.ride.id,
-      _currentUser!.uid,
-    );
+    try {
+      await RideService.requestToJoinRide(
+        widget.ride.id,
+        _currentUser!.uid,
+        "", // Optional: include message from a controller here
+      );
 
-    if (mounted) {
-      setState(() {
-        _isJoining = false;
-      });
-
-      if (errorMessage == null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seat claimed successfully!')),
+          const SnackBar(content: Text('Ride request sent!')),
         );
-      } else {
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to join ride: $errorMessage')),
+          SnackBar(content: Text('Error: ${e.toString()}')),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isJoining = false;
+        });
       }
     }
   }
@@ -144,6 +150,62 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   const Text(
                     'Passengers:',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Join Requests:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+
+                  StreamBuilder<List<RideRequest>>(
+                    stream: RideService.fetchRequestsForRide(currentRide.id),
+                    builder: (context, requestSnapshot) {
+                      if (requestSnapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (!requestSnapshot.hasData || requestSnapshot.data!.isEmpty) {
+                        return const Text('No pending requests.');
+                      }
+
+                      final requests = requestSnapshot.data!;
+
+                      return Column(
+                        children: requests.map((request) {
+                          return ListTile(
+                            title: Text('Rider ID: ${request.riderUid}'),
+                            subtitle: Text(request.message ?? 'No message'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.check, color: Colors.green),
+                                  onPressed: () async {
+                                    await RideService.acceptRideRequest(
+                                      request.id,
+                                      currentRide.id,
+                                      request.riderUid,
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Request accepted.')),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.red),
+                                  onPressed: () async {
+                                    await RideService.denyRideRequest(request.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Request denied.')),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
 
                   ...currentRide.joinedUserUids.map(
