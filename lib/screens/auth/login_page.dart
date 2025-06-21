@@ -91,7 +91,9 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       // 1. Begin interactive Google Sign In process
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn(
+        clientId: '527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com', // <--- PASTE THE CORRECT WEB CLIENT ID HERE
+      ).signIn();
 
       if (!mounted) return;
       if (googleUser == null) {
