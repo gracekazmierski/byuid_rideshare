@@ -8,6 +8,11 @@ import 'package:intl/intl.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
 import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart'; // Import the new detail screen
 import 'package:byui_rideshare/screens/rides/my_joined_rides_screen.dart';
+bool _showFullRides = true;
+SortOption _selectedSort = SortOption.soonest;
+DateTime? _startDate;
+DateTime? _endDate;
+enum SortOption{ soonest, latest, lowestFare, highestFare }
 
 class RideListScreen extends StatefulWidget {
   const RideListScreen({super.key});
@@ -17,25 +22,9 @@ class RideListScreen extends StatefulWidget {
 }
 
 class _RideListScreenState extends State<RideListScreen> {
-  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _fromController = TextEditingController();
+  final TextEditingController _toController =  TextEditingController();
   String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    // Listen to changes in the search bar and update the search query state
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim();
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose(); // Clean up the controller
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +39,7 @@ class _RideListScreenState extends State<RideListScreen> {
                     MaterialPageRoute(builder: (context) => MyJoinedRidesScreen())
                 );
               },
-              child: Text(
+              child: const Text(
                   'My Joined Rides',
                   style: TextStyle(
                       fontSize: 20,
@@ -66,35 +55,132 @@ class _RideListScreenState extends State<RideListScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: const Size.fromHeight(100),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by origin or destination...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                    },
-             )
-            : null,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-    ),
-      filled: true,
-      fillColor: Colors.white,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _fromController,
+                        decoration: InputDecoration(
+                          hintText: 'From',
+                          prefixIcon: Icon(Icons.location_on),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        onChanged: (_) => setState(() {}), // trigger ride stream update
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                        child: TextField(
+                          controller: _toController,
+                          decoration: InputDecoration(
+                            hintText: 'To',
+                            prefixIcon: Icon(Icons.location_on),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _showFullRides,
+                              onChanged: (val) {
+                                setState(() {
+                                  _showFullRides = val!;
+                                });
+                              },
+                            ),
+                            const Text('Show Full Rides'),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            DropdownButton<SortOption>(
+                              value: _selectedSort,
+                              onChanged: (SortOption? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _selectedSort = newValue;
+                                  });
+                                }
+                              },
+                              items: const [
+                                DropdownMenuItem(
+                                  value: SortOption.soonest,
+                                  child: Text("Soonest First"),
+                                ),
+                                DropdownMenuItem(
+                                  value: SortOption.latest,
+                                  child: Text("Latest First"),
+                                ),
+                                DropdownMenuItem(
+                                  value: SortOption.lowestFare,
+                                  child: Text("Lowest Fare"),
+                                ),
+                                DropdownMenuItem(
+                                  value: SortOption.highestFare,
+                                  child: Text("Highest Fare"),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final pickedStart = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2024),
+                              lastDate: DateTime(2030),
+                            );
+                            if (pickedStart != null) {
+                              final pickedEnd = await showDatePicker(
+                              context: context,
+                              initialDate: pickedStart,
+                              firstDate: pickedStart,
+                              lastDate: DateTime(2030)
+                              );
+                              setState(() {
+                                _startDate = pickedStart;
+                                _endDate = pickedEnd;
+                                });
+                              }
+                            },
+                            child: const Text("Selet Date Range"),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
 
-              )
-            )
-          )
-        )
-      ),
-      body: StreamBuilder<List<Ride>>(
-        stream: RideService.fetchRideListings(searchQuery: _searchQuery),
+            ),
+          ),
+        ),
+
+        body: StreamBuilder<List<Ride>>(
+          stream: RideService.fetchRideListings(
+            fromLocation: _fromController.text.trim(),
+            toLocation: _toController.text.trim(),
+            showFullRides: _showFullRides,
+            startDate: _startDate,
+            endDate: _endDate,
+            sortOption: _selectedSort,
+          ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
