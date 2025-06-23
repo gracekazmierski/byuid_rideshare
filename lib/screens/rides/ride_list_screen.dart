@@ -1,4 +1,5 @@
 // lib/screens/rides/ride_list_screen.dart
+import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/ride.dart';
@@ -50,6 +51,16 @@ class _RideListScreenState extends State<RideListScreen> {
           actions: [
             if (currentUser != null)
               IconButton(
+                icon: const Icon(Icons.account_circle),
+                tooltip: "Edit Profile",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
+                  );
+                }
+              ),
+              IconButton(
                 icon: const Icon(Icons.directions_car_filled_outlined), // Choose an appropriate icon
                 tooltip: 'My Posted Rides',
                 onPressed: () {
@@ -59,22 +70,15 @@ class _RideListScreenState extends State<RideListScreen> {
                   );
                 },
               ),
-
-            TextButton(
+            IconButton(
+              icon: const Icon(Icons.event_seat),
+              tooltip: "My Joined Rides",
               onPressed: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MyJoinedRidesScreen())
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyJoinedRidesScreen())
                 );
-              },
-              child: Text(
-                'My Joined Rides',
-                style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.black
-                ),
-              ),
-            ),
+            }),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () async {

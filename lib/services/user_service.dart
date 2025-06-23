@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_profile.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserService {
   static final CollectionReference usersCollection =
@@ -30,6 +31,43 @@ class UserService {
     } catch (e) {
       print('Failed to fetch user profile: $e');
       return null;
+    }
+  }
+
+  static Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
+    try {
+      final docRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      await docRef.set(data, SetOptions(merge: true));
+      print('User profile updated!');
+    } catch (e) {
+      print('Error updating user profile: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> updateUserEmail(String newEmail) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.verifyBeforeUpdateEmail(newEmail);
+        print('Verification email sent to $newEmail. Email will update after verification.');
+      }
+    } catch (e) {
+      print('Error sending email update verification: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> updateUserPassword(String newPassword) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.updatePassword(newPassword);
+        print('Password updated successfully');
+      }
+    } catch (e) {
+      print('Error updating password: $e');
+      rethrow;
     }
   }
 }
