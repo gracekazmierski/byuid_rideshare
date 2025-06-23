@@ -6,6 +6,7 @@ import 'package:byui_rideshare/screens/auth/auth_wrapper.dart';
 import 'package:byui_rideshare/screens/auth/login_page.dart';
 import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // Make sure this is imported!
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(

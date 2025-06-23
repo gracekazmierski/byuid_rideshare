@@ -3,11 +3,16 @@ import 'package:byui_rideshare/screens/rides/ride_list_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/ride.dart';
+// import 'package:byui_rideshare/screens/rides/driver_requests_screen.dart';
+import 'package:byui_rideshare/models/ride_request.dart';
+
 
 class RideService {
   static final CollectionReference ridesCollection =
-  FirebaseFirestore.instance.collection('rides');
+    FirebaseFirestore.instance.collection('rides');
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // save rides to firestore
   static Future<void> saveRideListing(Ride ride) async {
     try {
       // When saving, if the ride has no ID (new ride), add it and set the ID
@@ -26,11 +31,13 @@ class RideService {
     }
   }
 
+  // driver can delete rides
   static Future<void> cancelRide(String rideId) async {
     final rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
     await rideRef.delete();
   }
 
+  // driver can remove passengers
   static Future<void> removePassenger(String rideId, String passengerUid) async {
     DocumentReference rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
     await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -150,6 +157,20 @@ class RideService {
     });
   }
 
+  /// Fetches a stream of ride listings for a specific driver, ordered by rideDate.
+  static Stream<List<Ride>> fetchDriverRideListings(String driverUid) {
+    return ridesCollection
+        .where('driverUid', isEqualTo: driverUid) // Filter by driverUid
+        .orderBy('rideDate', descending: false) // Optional: order by date
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) =>
+          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+          .toList();
+    });
+  }
+
   /// Fetches a stream for a single ride by its ID for real-time updates.
   static Stream<Ride> getRideStream(String rideId) {
     return ridesCollection.doc(rideId).snapshots().map((doc) {
@@ -158,6 +179,117 @@ class RideService {
       } else {
         throw Exception("Ride not found"); // Or return a default/null value
       }
+    });
+  }
+
+  // user can request to join ride using the button
+  static Future<void> requestToJoinRide(
+    String rideId, String riderUid, String message) async {
+    try {
+      // Get the ride to retrieve its driverUid
+      final rideDoc = await _firestore.collection('rides').doc(rideId).get();
+      if (!rideDoc.exists) throw Exception("Ride not found");
+
+      final driverUid = rideDoc['driverUid'];
+
+      // Save ride request with driverUid included
+      await _firestore.collection('ride_requests').add({
+        'rideId': rideId,
+        'riderUid': riderUid,
+        'driverUid': driverUid, // 🔹 important
+        'message': message,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      print('Error sending ride request: $error');
+      throw error;
+    }
+  }
+
+  // shows driver list of requests made from riders
+  static Stream<List<RideRequest>> fetchRideRequestsForDriver(String driverUid) {
+    return _firestore
+        .collection('ride_requests')
+        .where('driverUid', isEqualTo: driverUid)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => RideRequest.fromMap(d.data(), d.id)).toList()); 
+  }
+
+  // list of pending requests that need an answer
+  static Stream<List<RideRequest>> fetchRequestsForRide(String rideId) {
+    return _firestore
+        .collection('ride_requests')
+        .where('rideId', isEqualTo: rideId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((doc) => RideRequest.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  // ability to accept ride
+  static Future<void> acceptRideRequest(
+    String requestId, String rideId, String riderUid) async {
+    final rideRef = _firestore.collection('rides').doc(rideId);
+    final requestRef = _firestore.collection('ride_requests').doc(requestId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(rideRef);
+      if (!snapshot.exists) throw Exception('Ride not found.');
+
+      final data = snapshot.data()!;
+      final currentJoined = List<String>.from(data['joinedUserUids'] ?? []);
+      final availableSeats = data['availableSeats'] ?? 0;
+      final driverUid = data['driverUid'];
+
+      if (availableSeats <= 0) throw Exception('No available seats.');
+      if (currentJoined.contains(riderUid)) throw Exception('Already joined.');
+
+      final updatedJoined = [...currentJoined, riderUid];
+      final updatedSeats = availableSeats - 1;
+
+      // ✨ update exactly what the Firestore rules expect
+      transaction.update(rideRef, {
+        'joinedUserUids': updatedJoined,
+        'availableSeats': updatedSeats,
+        'driverUid': driverUid, // 🔐 include this so Firestore knows it didn't change
+      });
+
+      transaction.delete(requestRef);
+    });
+
+    // Notify the rider
+    await _firestore.collection('notifications').add({
+      'userId': riderUid,
+      'message': 'Your request to join ride $rideId was accepted.',
+      'timestamp': FieldValue.serverTimestamp(),
+      'read': false,
+    });
+  }
+
+  //ability to deny ride
+  static Future<void> denyRideRequest(String requestId) async {
+    await _firestore.collection('ride_requests').doc(requestId).delete();
+  }
+
+  // get requests rider has made so far
+  static Stream<List<RideRequest>> fetchRequestsByRider(String riderUid) {
+    return _firestore
+        .collection('ride_requests')
+        .where('riderUid', isEqualTo: riderUid)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => RideRequest.fromMap(d.data(), d.id)).toList());
+  }
+  
+  /// Fetches a list of joined rides based on the userID
+  static Stream<List<Ride>> fetchJoinedRideListings(String? passengerUid) {
+    return FirebaseFirestore.instance
+        .collection('rides')
+        .where('joinedUserUids', arrayContains: passengerUid)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Ride.fromFirestore(doc)).toList();
     });
   }
 

@@ -4,6 +4,7 @@ class UserProfile {
   final String name;
   final bool isDriver;
   final String phoneNumber;
+  final String? facebookUsername;
   final String? vehicleMake;
   final String? vehicleModel;
   final String? vehicleColor;
@@ -14,14 +15,15 @@ class UserProfile {
     required this.name,
     required this.isDriver,
     required this.phoneNumber,
+    this.facebookUsername,
     this.vehicleMake,
     this.vehicleModel,
     this.vehicleColor,
     this.vehicleYear,
   });
 
-    Map<String, dynamic> toFirestore() {
-    return {
+  Map<String, dynamic> toFirestore() {
+    final data = {
       'uid': uid,
       'name': name,
       'isDriver': isDriver,
@@ -31,14 +33,22 @@ class UserProfile {
       'vehicleColor': isDriver ? vehicleColor : null,
       'vehicleYear': isDriver ? vehicleYear : null,
     };
+
+    // Conditionally add facebookUsername only if it's non-null and non-empty
+    if (facebookUsername != null && facebookUsername!.trim().isNotEmpty) {
+      data['facebookUsername'] = facebookUsername!.trim();
+    }
+
+    return data;
   }
 
-    factory UserProfile.fromFirestore(Map<String, dynamic> data) {
+  factory UserProfile.fromFirestore(Map<String, dynamic> data) {
     return UserProfile(
-      uid: data['uid'],
-      name: data['name'],
-      isDriver: data['isDriver'],
-      phoneNumber: data['phoneNumber'],
+      uid: data['uid'] ?? '',
+      name: data['name'] ?? '',
+      isDriver: data['isDriver'] ?? false,
+      phoneNumber: data['phoneNumber'] ?? '',
+      facebookUsername: data['facebookUsername'],
       vehicleMake: data['vehicleMake'],
       vehicleModel: data['vehicleModel'],
       vehicleColor: data['vehicleColor'],
