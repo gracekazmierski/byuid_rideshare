@@ -6,18 +6,6 @@ import 'package:byui_rideshare/screens/auth/auth_wrapper.dart';
 import 'package:byui_rideshare/screens/auth/login_page.dart';
 import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // Make sure this is imported!
 
-// need to create a navigation bar type thing or something to put this somewhere
-// it allows riders to see the status of the rides they have joined
-/* ListTile(
-  leading: const Icon(Icons.history),
-  title: const Text('My Requests'),
-  onTap: () {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const MyRequestsScreen()),
-    );
-  },
-),
- */
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

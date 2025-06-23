@@ -1,5 +1,7 @@
 // lib/services/ride_service.dart
+import 'package:byui_rideshare/screens/rides/ride_list_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/ride.dart';
 // import 'package:byui_rideshare/screens/rides/driver_requests_screen.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
@@ -35,7 +37,7 @@ class RideService {
     await rideRef.delete();
   }
 
-  // driver can remove passengers? or is it the rider that takes themselves off?
+  // driver can remove passengers
   static Future<void> removePassenger(String rideId, String passengerUid) async {
     DocumentReference rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
     await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -60,7 +62,67 @@ class RideService {
 
   /// Fetches a stream of ride listings ordered by rideDate.
   /// This provides real-time updates when new rides are added or existing ones change.
-  static Stream<List<Ride>> fetchRideListings({String? searchQuery}) {
+  static Stream<List<Ride>> fetchRideListings({
+    String? fromLocation,
+    String? toLocation,
+    bool showFullRides = true,
+    SortOption sortOption = SortOption.soonest,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    Query query = ridesCollection;
+
+    if (!showFullRides) {
+      query = query.where('isFull', isEqualTo: false);
+    }
+
+    if (startDate != null) {
+      query = query.where('rideDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+    }
+
+    if (endDate != null) {
+      query = query.where('rideDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+    }
+
+    switch (sortOption) {
+      case SortOption.soonest:
+        query = query.orderBy('rideDate', descending: false);
+        break;
+      case SortOption.latest:
+        query = query.orderBy('rideDate', descending: true);
+        break;
+      case SortOption.lowestFare:
+        query = query.orderBy('fare', descending: false);
+        break;
+      case SortOption.highestFare:
+        query = query.orderBy('fare', descending: true);
+        break;
+    }
+
+    return query.snapshots().map((snapshot) {
+      List<Ride> rides = snapshot.docs
+          .map((doc) =>
+          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+          .toList();
+
+      if (fromLocation != null && fromLocation.isNotEmpty) {
+        final lowerFrom = fromLocation.toLowerCase();
+        rides = rides
+            .where((r) => r.origin.toLowerCase().contains(lowerFrom))
+            .toList();
+      }
+
+      if (toLocation != null && toLocation.isNotEmpty) {
+        final lowerTo = toLocation.toLowerCase();
+        rides = rides
+            .where((r) => r.destination.toLowerCase().contains(lowerTo))
+            .toList();
+      }
+
+      return rides;
+    });
+
+
     return ridesCollection
         .orderBy('rideDate', descending: false) // Order by date, earliest first
         .snapshots() // Get a stream of query snapshots (real-time updates)
@@ -72,11 +134,17 @@ class RideService {
 
           // If a search query is provided, filter the list of rides
           //The query is matched against the "origin" and "destination"
-          if (searchQuery != null && searchQuery.isNotEmpty) {
-            final lowerQuery = searchQuery.toLowerCase();
+          if (fromLocation != null && fromLocation.isNotEmpty) {
+            final lowerQuery = fromLocation.toLowerCase();
             rides = rides.where((ride) =>
-              ride.origin.toLowerCase().contains(lowerQuery) ||
-              ride.destination.toLowerCase().contains(lowerQuery)).toList(); // Make lowercase so there are no spell search errors.
+              ride.origin.toLowerCase().contains(fromLocation.toLowerCase())
+            ).toList();// Make lowercase so there are no spell search errors.
+          }
+
+          if (toLocation != null && toLocation.isNotEmpty){
+            rides = rides.where((ride) =>
+              ride.destination.toLowerCase().contains(toLocation.toLowerCase())
+            ).toList();
           }
 
           return rides;

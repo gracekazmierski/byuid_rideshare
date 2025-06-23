@@ -22,6 +22,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _facebookController = TextEditingController();
   UserRole _selectedRole = UserRole.rider; // Default role
 
   // Driver specific fields
@@ -37,6 +38,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _facebookController.dispose();
     _vehicleMakeController.dispose();
     _vehicleModelController.dispose();
     _vehicleColorController.dispose();
@@ -65,6 +67,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         uid: currentUser.uid,
         name: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
+        facebookUsername: _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
         vehicleMake: _selectedRole == UserRole.driver
             ? _vehicleMakeController.text.trim()
@@ -140,6 +143,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     return 'Please enter your phone number';
                   }
                   // Add more specific phone validation if needed
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _facebookController,
+                decoration: const InputDecoration(labelText: 'Facebook Username'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your facebook username';
+                  }
                   return null;
                 },
               ),

@@ -1,4 +1,5 @@
 // lib/screens/rides/ride_list_screen.dart
+import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart'; // From main
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/ride.dart';
@@ -8,10 +9,10 @@ import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
 import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
 import 'package:byui_rideshare/screens/rides/my_rides_screen.dart'; // My Posted Rides
 import 'package:byui_rideshare/screens/rides/my_joined_rides_screen.dart';
-import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // Assuming this is your edit profile screen
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // For Car icon
+import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // Assuming this is your edit profile screen - From Grace
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // For Car icon - From Grace
 
-// Define colors based on the React design
+// Define colors based on the React design - From Grace
 const Color BYUI_BLUE = Color(0xFF006eb6);
 const Color BYUI_BLUE_HOVER = Color(0xFF005a94);
 const Color BYUI_GREEN = Color(0xFF2d8f47);
@@ -21,6 +22,12 @@ const Color GRAY_500 = Color(0xFF6B7280); // Assuming text-gray-500
 const Color GRAY_600 = Color(0xFF4B5563); // Assuming text-gray-600
 const Color GRAY_700 = Color(0xFF374151); // Assuming text-gray-700
 
+// State variables from main
+bool _showFullRides = true;
+SortOption _selectedSort = SortOption.soonest;
+DateTime? _startDate;
+DateTime? _endDate;
+enum SortOption { soonest, latest, lowestFare, highestFare } // From main
 
 class RideListScreen extends StatefulWidget {
   const RideListScreen({super.key});
@@ -30,10 +37,17 @@ class RideListScreen extends StatefulWidget {
 }
 
 class _RideListScreenState extends State<RideListScreen> {
+  // From Grace
   final TextEditingController _fromSearchController = TextEditingController();
   final TextEditingController _toSearchController = TextEditingController();
   String _fromQuery = '';
   String _toQuery = '';
+
+  // From main - These are now part of the class state
+  // bool _showFullRides = true; // Moved to global scope based on main's initial placement, but better as class member
+  // SortOption _selectedSort = SortOption.soonest; // Moved to global scope
+  // DateTime? _startDate; // Moved to global scope
+  // DateTime? _endDate; // Moved to global scope
 
   @override
   void initState() {
@@ -46,8 +60,6 @@ class _RideListScreenState extends State<RideListScreen> {
     setState(() {
       _fromQuery = _fromSearchController.text.trim();
       _toQuery = _toSearchController.text.trim();
-      // Potentially trigger a search here, or when the search button is pressed.
-      // For now, the StreamBuilder will react to changes in these state variables.
     });
   }
 
@@ -58,8 +70,10 @@ class _RideListScreenState extends State<RideListScreen> {
     super.dispose();
   }
 
-  // --- Widget for the custom AppBar header ---
+  // --- Widget for the custom AppBar header --- (Merged Grace's design with main's actions)
   PreferredSizeWidget _buildAppBarHeader(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser; // Get current user
+
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 10), // Adjust height as needed
       child: Container(
@@ -90,17 +104,48 @@ class _RideListScreenState extends State<RideListScreen> {
                   ),
                 ],
               ),
-              IconButton(
-                icon: const Icon(Icons.person, color: Colors.white, size: 28),
-                tooltip: 'Profile',
-                onPressed: () {
-                  // Navigate to profile editing or viewing screen
-                  // Assuming ProfileSetupScreen can also be used for editing
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-                  );
-                },
+              // Actions from 'main' branch integrated here
+              Row(
+                children: [
+                  if (currentUser != null)
+                    IconButton(
+                      icon: const Icon(Icons.account_circle, color: Colors.white, size: 28), // Consistent sizing
+                      tooltip: "Edit Profile",
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()), // Using Grace's ProfileSetupScreen
+                        );
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.directions_car_filled_outlined, color: Colors.white, size: 28), // Consistent sizing
+                    tooltip: 'My Posted Rides',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MyRidesScreen()),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.event_seat, color: Colors.white, size: 28), // Consistent sizing
+                    tooltip: "My Joined Rides",
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MyJoinedRidesScreen()),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white, size: 28), // Consistent sizing
+                    tooltip: 'Logout', // Added tooltip for clarity
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -109,7 +154,7 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
-  // --- Widget for the search input section ---
+  // --- Widget for the search input section --- (Merged Grace's design with main's filters)
   Widget _buildSearchSection() {
     return Container(
       color: Colors.white,
@@ -119,7 +164,7 @@ class _RideListScreenState extends State<RideListScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
-            controller: _fromSearchController,
+            controller: _fromSearchController, // Using Grace's controller
             decoration: InputDecoration(
               hintText: 'FROM - Enter pickup location',
               prefixIcon: Icon(Icons.location_on, color: BYUI_GREEN),
@@ -134,7 +179,7 @@ class _RideListScreenState extends State<RideListScreen> {
           ),
           const SizedBox(height: 12.0),
           TextField(
-            controller: _toSearchController,
+            controller: _toSearchController, // Using Grace's controller
             decoration: InputDecoration(
               hintText: 'TO - Enter destination',
               prefixIcon: Icon(Icons.location_on, color: BYUI_RED),
@@ -148,15 +193,89 @@ class _RideListScreenState extends State<RideListScreen> {
             ),
           ),
           const SizedBox(height: 16.0),
+          // Filtering and Sorting options from 'main' branch
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Checkbox(
+                    value: _showFullRides,
+                    onChanged: (val) {
+                      setState(() {
+                        _showFullRides = val!;
+                      });
+                    },
+                  ),
+                  const Text('Show Full Rides'),
+                ],
+              ),
+              Row(
+                children: [
+                  DropdownButton<SortOption>(
+                    value: _selectedSort,
+                    onChanged: (SortOption? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedSort = newValue;
+                        });
+                      }
+                    },
+                    items: const [
+                      DropdownMenuItem(
+                        value: SortOption.soonest,
+                        child: Text("Soonest First"),
+                      ),
+                      DropdownMenuItem(
+                        value: SortOption.latest,
+                        child: Text("Latest First"),
+                      ),
+                      DropdownMenuItem(
+                        value: SortOption.lowestFare,
+                        child: Text("Lowest Fare"),
+                      ),
+                      DropdownMenuItem(
+                        value: SortOption.highestFare,
+                        child: Text("Highest Fare"),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+              TextButton(
+                onPressed: () async {
+                  final pickedStart = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2024),
+                    lastDate: DateTime(2030),
+                  );
+                  if (pickedStart != null) {
+                    final pickedEnd = await showDatePicker(
+                      context: context,
+                      initialDate: pickedStart,
+                      firstDate: pickedStart,
+                      lastDate: DateTime(2030),
+                    );
+                    setState(() {
+                      _startDate = pickedStart;
+                      _endDate = pickedEnd;
+                    });
+                  }
+                },
+                child: Text(_startDate == null ? "Select Date Range" : "${DateFormat('MM/dd').format(_startDate!)} - ${DateFormat('MM/dd').format(_endDate ?? _startDate!)}"), // Display selected range
+              )
+            ],
+          ),
+          const SizedBox(height: 16.0),
           ElevatedButton(
             onPressed: () {
-              // Trigger search based on _fromQuery and _toQuery
-              // The StreamBuilder will automatically react to setState
-              // For a more explicit search, you could call a function here
-              // that updates the stream or re-fetches data.
-              // For now, just a visual feedback that button was pressed.
+              // The StreamBuilder will automatically react to changes in state variables
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Searching for rides from $_fromQuery to $_toQuery...')),
+                SnackBar(
+                    content: Text(
+                        'Searching for rides from $_fromQuery to $_toQuery with filters...') // Updated message
+                    ),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -166,9 +285,7 @@ class _RideListScreenState extends State<RideListScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              // Simulate hover effect for web by using MouseRegion
-              // On mobile, this will just be the default press animation.
-              elevation: 2, // Tailwind shadow-sm equivalent
+              elevation: 2,
             ),
             child: const Text(
               'Search Rides',
@@ -180,7 +297,7 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
-  // --- Widget for a single Ride Card ---
+  // --- Widget for a single Ride Card --- (Grace's version, assume it's preferred)
   Widget _buildRideCard(BuildContext context, Ride ride) {
     final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
 
@@ -190,17 +307,16 @@ class _RideListScreenState extends State<RideListScreen> {
         .map((name) => name.isNotEmpty ? name[0] : '')
         .join()
         .toUpperCase();
-    if (driverInitials.length > 2) { // Limit to 2 initials if name is very long
+    if (driverInitials.length > 2) {
       driverInitials = driverInitials.substring(0, 2);
     }
     if (driverInitials.isEmpty) {
-      driverInitials = '?'; // Fallback if initials are empty
+      driverInitials = '?';
     }
-
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6.0),
-      elevation: 2, // Corresponds to shadow-md hover
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         onTap: () {
@@ -234,9 +350,7 @@ class _RideListScreenState extends State<RideListScreen> {
                       Text(
                         ride.origin,
                         style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: GRAY_700),
+                            fontSize: 14, fontWeight: FontWeight.w500, color: GRAY_700),
                       ),
                     ],
                   ),
@@ -255,9 +369,7 @@ class _RideListScreenState extends State<RideListScreen> {
                       Text(
                         ride.destination,
                         style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: GRAY_700),
+                            fontSize: 14, fontWeight: FontWeight.w500, color: GRAY_700),
                       ),
                     ],
                   ),
@@ -271,7 +383,7 @@ class _RideListScreenState extends State<RideListScreen> {
                   const Icon(Icons.calendar_today, size: 16, color: GRAY_500),
                   const SizedBox(width: 8),
                   Text(
-                    '${DateFormat('MMM d yyyy').format(ride.rideDate.toDate())} at ${DateFormat('h:mm a').format(ride.rideDate.toDate())}',
+                    '${DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate())}',
                     style: const TextStyle(fontSize: 14, color: GRAY_500),
                   ),
                 ],
@@ -289,21 +401,19 @@ class _RideListScreenState extends State<RideListScreen> {
                       Text(
                         '${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available',
                         style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: BYUI_BLUE),
+                            fontSize: 14, fontWeight: FontWeight.w500, color: BYUI_BLUE),
                       ),
                     ],
                   ),
                   Row(
                     children: [
                       CircleAvatar(
-                        radius: 12, // Corresponds to h-6 w-6
-                        backgroundColor: const Color(0xFFe6f1fa), // Similar to #e6f1fa
+                        radius: 12,
+                        backgroundColor: const Color(0xFFe6f1fa),
                         child: Text(
                           driverInitials,
                           style: TextStyle(
-                            fontSize: 10, // Text-xs in Tailwind is approx 0.75rem or 12px, so 10-12 is good for initials
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: BYUI_BLUE,
                           ),
@@ -312,8 +422,7 @@ class _RideListScreenState extends State<RideListScreen> {
                       const SizedBox(width: 4),
                       Text(
                         ride.driverName,
-                        style:
-                        const TextStyle(fontSize: 12, color: GRAY_500),
+                        style: const TextStyle(fontSize: 12, color: GRAY_500),
                       ),
                     ],
                   ),
@@ -332,7 +441,7 @@ class _RideListScreenState extends State<RideListScreen> {
                   color: Colors.grey,
                 ),
               ),
-              if (isRideFull) // FULL tag
+              if (isRideFull)
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Container(
@@ -361,11 +470,11 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
-  // --- Widget for the custom Bottom Navigation Bar ---
+  // --- Widget for the custom Bottom Navigation Bar --- (Grace's version)
   Widget _buildBottomNavBar() {
     return BottomAppBar(
       color: Colors.white,
-      elevation: 4, // border-t and shadow effect
+      elevation: 4,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -383,7 +492,7 @@ class _RideListScreenState extends State<RideListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    FaIcon(FontAwesomeIcons.car, size: 20, color: BYUI_BLUE), // Car icon
+                    FaIcon(FontAwesomeIcons.car, size: 20, color: BYUI_BLUE),
                     SizedBox(height: 4),
                     Text('My Posted Rides', style: TextStyle(fontSize: 10, color: BYUI_BLUE)),
                   ],
@@ -406,13 +515,13 @@ class _RideListScreenState extends State<RideListScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      height: 24, // h-5 w-5 equivalent icon space
+                      height: 24,
                       width: 24,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: GRAY_600, width: 2), // border-2 border-current
+                        border: Border.all(color: GRAY_600, width: 2),
                       ),
-                      child: Center(
+                      child: const Center(
                         child: Text(
                           '+',
                           style: TextStyle(
@@ -435,7 +544,7 @@ class _RideListScreenState extends State<RideListScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfileSetupScreen()), // Assuming this is for editing profile
+                  MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
                 );
               },
               customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -444,7 +553,7 @@ class _RideListScreenState extends State<RideListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    Icon(Icons.person, size: 24, color: GRAY_600), // User icon
+                    Icon(Icons.person, size: 24, color: GRAY_600),
                     SizedBox(height: 4),
                     Text('Edit Profile', style: TextStyle(fontSize: 10, color: GRAY_600)),
                   ],
@@ -452,7 +561,6 @@ class _RideListScreenState extends State<RideListScreen> {
               ),
             ),
           ),
-          // Added a "My Joined Rides" button, as it was in your original code
           Expanded(
             child: InkWell(
               onTap: () {
@@ -467,7 +575,7 @@ class _RideListScreenState extends State<RideListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    Icon(Icons.people_alt, size: 24, color: GRAY_600), // People icon
+                    Icon(Icons.people_alt, size: 24, color: GRAY_600),
                     SizedBox(height: 4),
                     Text('My Joined Rides', style: TextStyle(fontSize: 10, color: GRAY_600)),
                   ],
@@ -480,23 +588,24 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GRAY_50, // Corresponds to bg-gray-50
+      backgroundColor: GRAY_50,
       appBar: _buildAppBarHeader(context),
       body: Column(
         children: [
           _buildSearchSection(),
           Expanded(
             child: StreamBuilder<List<Ride>>(
-              // Updated to use both search queries
+              // Updated to use both search queries and filters/sort options
               stream: RideService.fetchRideListings(
-                searchQuery: _fromQuery, // Use _fromQuery for now for simplicity
-                // If RideService.fetchRideListings needs `from` and `to` separate parameters:
-                // fromLocation: _fromQuery,
-                // toLocation: _toQuery,
+                fromLocation: _fromQuery, // Now correctly using 'from'
+                toLocation: _toQuery, // Now correctly using 'to'
+                showFullRides: _showFullRides,
+                startDate: _startDate,
+                endDate: _endDate,
+                sortOption: _selectedSort,
               ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -514,7 +623,7 @@ class _RideListScreenState extends State<RideListScreen> {
                 final rides = snapshot.data!;
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16.0), // p-4
+                  padding: const EdgeInsets.all(16.0),
                   itemCount: rides.length,
                   itemBuilder: (context, index) {
                     final ride = rides[index];

@@ -33,6 +33,8 @@ migrate_working_dir/
 .pub/
 /build/
 /lib/firebase_options.dart
+ios/Podfile
+macos/Podfile
 
 # Symbolication related
 app.*.symbols
