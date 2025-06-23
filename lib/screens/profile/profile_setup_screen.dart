@@ -5,6 +5,7 @@ import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
 // Import your main app screen (e.g., MyHomePage or RideListScreen)
 // import '../home_screen.dart'; // Replace with your actual home screen import
+import '../auth/auth_wrapper.dart'; // Assuming this leads to your main screen or dashboard
 
 enum UserRole { rider, driver }
 
@@ -53,7 +54,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        // Should not happen if coming from sign up, but good to check
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User not logged in.')),
         );
@@ -85,13 +85,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       try {
         await UserService.saveUserProfile(userProfile);
+
+        // --- NEW LINE ADDED HERE ---
+        // Update Firebase Auth displayName with the name from the profile setup
+        await currentUser.updateDisplayName(_nameController.text.trim());
+        print('Firebase Auth Display Name Updated: ${currentUser.displayName}');
+        // --- END NEW LINE ---
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
         );
         // Navigate to the main part of the app
         // Replace with your actual navigation logic and route
-        Navigator.of(context).pushReplacementNamed('/'); // Example: Navigate to home
-        // Or: Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => MyHomePage()));
+        // Assuming AuthWrapper correctly directs to the main content
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AuthWrapper()));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save profile: $e')),
