@@ -293,6 +293,19 @@ class RideService {
     });
   }
 
+  // shows users name instead of ID
+  static Future<String?> getUserNameByUid(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return doc.data()?['name'] ?? 'Unknown Rider';
+      }
+    } catch (e) {
+      print('Error fetching user name: $e');
+    }
+    return 'Unknown Rider';
+  }
+
   /// Claims a seat on a ride using a Firestore transaction for atomicity.
   /// Returns null on success, or an error message string.
   static Future<String?> joinRide(String rideId, String userId) async {
