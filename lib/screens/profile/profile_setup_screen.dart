@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For getting current user UID
 import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart'; // For phone input with dashes
 // Import your main app screen (e.g., MyHomePage or RideListScreen)
 // import '../home_screen.dart'; // Replace with your actual home screen import
 import '../auth/auth_wrapper.dart'; // Assuming this leads to your main screen or dashboard
@@ -44,6 +45,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _loadProfileData(currentUser.uid);
     }
   }
+
+  // to allow for phone input to have the dashes
+  final _phoneFormatter = MaskTextInputFormatter(
+    mask: '(###) ###-####',
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
 
   // for _loadProfileData
   String _formatPhoneNumber(String number) {
@@ -117,7 +125,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         uid: currentUser.uid,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
+        phoneNumber: _phoneFormatter.getUnmaskedText(),
         facebookUsername: _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
         vehicleMake: _selectedRole == UserRole.driver
@@ -199,11 +207,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 controller: _phoneController,
                 decoration: const InputDecoration(labelText: 'Phone Number'),
                 keyboardType: TextInputType.phone,
+                inputFormatters: [_phoneFormatter],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your phone number';
                   }
-                  // Add more specific phone validation if needed
+                  // Check if all digits are entered
+                  if (_phoneFormatter.getUnmaskedText().length != 10) {
+                    return 'Please enter a valid 10-digit phone number';
+                  }
                   return null;
                 },
               ),
