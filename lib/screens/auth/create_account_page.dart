@@ -47,7 +47,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         // Create a UserProfile object with basic info
         UserProfile profile = UserProfile(
           uid: user.uid,
-          name: user.email!.split('@')[0], // Use part of email as default name
+          firstName: user.email!.split('@')[0], // Use email prefix as first name
+          lastName: '', // Leave last name empty for now
           isDriver: _isDriver,
           phoneNumber: '', // Will be updated on profile setup screen
         );

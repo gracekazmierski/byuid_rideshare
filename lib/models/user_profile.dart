@@ -1,7 +1,8 @@
 
 class UserProfile {
   final String uid;
-  final String name;
+  final String firstName;
+  final String lastName;
   final bool isDriver;
   final String phoneNumber;
   final String? facebookUsername;
@@ -12,7 +13,8 @@ class UserProfile {
 
   UserProfile({
     required this.uid,
-    required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.isDriver,
     required this.phoneNumber,
     this.facebookUsername,
@@ -25,7 +27,8 @@ class UserProfile {
   Map<String, dynamic> toFirestore() {
     final data = {
       'uid': uid,
-      'name': name,
+      'firstName': firstName,
+      'lastName': lastName,
       'isDriver': isDriver,
       'phoneNumber': phoneNumber,
       'vehicleMake': isDriver ? vehicleMake : null,
@@ -45,7 +48,8 @@ class UserProfile {
   factory UserProfile.fromFirestore(Map<String, dynamic> data) {
     return UserProfile(
       uid: data['uid'] ?? '',
-      name: data['name'] ?? '',
+      firstName: data['firstName'] ?? '',
+      lastName: data['lastName'] ?? '',
       isDriver: data['isDriver'] ?? false,
       phoneNumber: data['phoneNumber'] ?? '',
       facebookUsername: data['facebookUsername'],

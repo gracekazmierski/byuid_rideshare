@@ -16,7 +16,8 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _facebookController = TextEditingController();
   final _emailController = TextEditingController();
@@ -45,7 +46,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _emailController.text = currentUser.email ?? '';
     final userProfile = await UserService.fetchUserProfile(currentUser.uid);
     if (userProfile != null) {
-      _nameController.text = userProfile.name;
+      _firstNameController.text = userProfile.firstName;
+      _lastNameController.text = userProfile.lastName;
       _phoneController.text = userProfile.phoneNumber;
       _facebookController.text = userProfile.facebookUsername ?? '';
       _selectedRole = userProfile.isDriver ? UserRole.driver : UserRole.rider;
@@ -71,7 +73,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     try {
       await UserService.updateUserProfile(currentUser.uid, {
-        'name': _nameController.text.trim(),
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
         'facebookUsername': _facebookController.text.trim(),
         'isDriver': _selectedRole == UserRole.driver,
@@ -113,7 +116,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _facebookController.dispose();
     _emailController.dispose();
@@ -138,10 +142,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                controller: _firstNameController,
+                decoration: const InputDecoration(labelText: 'First Name'),
                 validator: (value) =>
-                value == null || value.isEmpty ? 'Enter your name' : null,
+                    value == null || value.isEmpty ? 'Enter your first name' : null,
+              ),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(labelText: 'Last Name'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter your last name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
