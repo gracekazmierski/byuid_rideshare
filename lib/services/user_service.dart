@@ -73,9 +73,9 @@ class UserService {
 }
 
 void testProfileSave() async {
-  UserProfile profile = UserProfile(uid: 'abc123', name: 'Savannah', isDriver: true, phoneNumber: '555');
+  UserProfile profile = UserProfile(uid: 'abc123', firstName: 'Savannah', lastName: 'test', isDriver: true, phoneNumber: '555');
   await UserService.saveUserProfile(profile);
 
   UserProfile? fetched = await UserService.fetchUserProfile('abc123');
-  print('Name: ${fetched?.name}');
+  print('Name: ${fetched?.firstName} ${fetched?.lastName}');
 }

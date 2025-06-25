@@ -172,37 +172,52 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
                       return Column(
                         children: requests.map((request) {
-                          return ListTile(
-                            title: Text('Rider ID: ${request.riderUid}'),
-                            subtitle: Text(request.message ?? 'No message'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.check, color: Colors.green),
-                                  onPressed: () async {
-                                    await RideService.acceptRideRequest(
-                                      request.id,
-                                      currentRide.id,
-                                      request.riderUid,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Request accepted.')),
-                                    );
-                                  },
+                          return FutureBuilder<String?>(
+                            future: RideService.getUserNameByUid(request.riderUid),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const ListTile(
+                                  title: Text('Rider: Loading...'),
+                                );
+                              }
+
+                              final riderName = snapshot.data ?? 'Unknown Rider';
+
+                              return ListTile(
+                                title: Text('Rider: $riderName'),
+                                subtitle: Text(request.message ?? 'No message'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.check, color: Colors.green),
+                                      onPressed: () async {
+                                        await RideService.acceptRideRequest(
+                                          request.id,
+                                          currentRide.id,
+                                          request.riderUid,
+                                        );
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Request accepted.')),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.close, color: Colors.red),
+                                      onPressed: () async {
+                                        await RideService.denyRideRequest(request.id);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Request denied.')),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.red),
-                                  onPressed: () async {
-                                    await RideService.denyRideRequest(request.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Request denied.')),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           );
+
+
                         }).toList(),
                       );
                     },
