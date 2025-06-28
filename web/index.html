@@ -31,8 +31,49 @@
 
   <title>byui_rideshare</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- IMPORTANT: Firebase SDK and Configuration for Web -->
+  <!-- Load Firebase SDKs -->
+  <!-- Use a specific major version (e.g., 9) and let Firebase handle minor updates, or specify exact minor versions -->
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics-compat.js"></script>
+  <!-- Also include other Firebase SDKs you use in your app, like Auth and Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
+  <!-- IMPORTANT: Replace '9.x.x' with the actual major version you intend to use or that Firebase Console suggests.
+       You often don't need the 'compat' version if using modular SDK, but it's safer for FlutterFire to use them
+       if that's what your setup expects. Firebase Console usually suggests the modular imports.
+       If your console showed:
+       import { initializeApp } from "firebase/app";
+       import { getAnalytics } from "firebase/analytics";
+       Then you might need the non-compat versions:
+       <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
+       <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics.js"></script>
+       But for compatibility with FlutterFire, stick with what typically works, which is often `compat`.
+       If issues persist, try swapping `compat.js` for `.js` for all your Firebase scripts.
+  -->
+
+  <script>
+    // Your web app's Firebase configuration
+    // This is copied directly from your Firebase Console
+    var firebaseConfig = {
+      apiKey: "AIzaSyBjx-4rPklg6MgDjKEfyRXmWMjzUhRanHc",
+      authDomain: "byuirideshare.firebaseapp.com",
+      projectId: "byuirideshare",
+      storageBucket: "byuirideshare.firebasestorage.app",
+      messagingSenderId: "527415309529",
+      appId: "1:527415309529:web:7ecf2a44100fefdd34bac8",
+      measurementId: "G-HNGZLVJRVS"
+    };
+
+    // DO NOT add firebase.initializeApp(firebaseConfig); here.
+    // The FlutterFire plugins (in your Dart code) handle this initialization automatically
+    // when you call Firebase.initializeApp() in main.dart.
+  </script>
+  <!-- END Firebase SDK and Configuration for Web -->
+
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+<script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
