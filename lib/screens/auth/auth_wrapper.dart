@@ -1,41 +1,38 @@
 // lib/screens/auth/auth_wrapper.dart
+
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Grace's screen
-import 'package:byui_rideshare/main.dart'; // To access MyHomePage if desired
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Import the screen for logged-in users
+import 'package:byui_rideshare/screens/auth/welcome_screen.dart'; // Import your WelcomeScreen
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+  const AuthWrapper({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // StreamBuilder listens to authentication state changes
+    // Listen to the authentication state changes
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Show a loading indicator while checking auth state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        // If there's an error with the stream
-        if (snapshot.hasError) {
-          return const Scaffold(
-            body: Center(child: Text('Error checking authentication state.')),
-          );
+        // If the connection is active and data is available (user logged in/out status)
+        if (snapshot.connectionState == ConnectionState.active) {
+          final user = snapshot.data; // Get the current user (null if logged out)
+
+          if (user == null) {
+            // User is logged out, show the WelcomeScreen
+            return const WelcomeScreen(); // Directs to your consolidated WelcomeScreen
+          } else {
+            // User is logged in, show the RideListScreen
+            return const RideListScreen();
+          }
         }
 
-        final User? user = snapshot.data; // The current authenticated user
-
-        if (user != null) {
-          return const RideListScreen();
-        } else {
-          // User is NOT logged in
-          // You can decide whether to show the LoginPage directly or your MyHomePage welcome.
-          // For simplicity, let's direct to the welcome page which links to login.
-          return const MyHomePage(title: 'BYU-I Rideshare');
-        }
+        // While waiting for the authentication state, show a loading indicator
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
       },
     );
   }
