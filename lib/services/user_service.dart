@@ -70,6 +70,24 @@ class UserService {
       rethrow;
     }
   }
+
+  /// Returns the full name (or first name only) for a given UID
+  static Future<String?> getUserName(String uid) async {
+    try {
+      final profile = await fetchUserProfile(uid);
+      if (profile == null) return "Unknown Driver";
+
+      final first = profile.firstName ?? "";
+      final last = profile.lastName ?? "";
+
+      if (first.isEmpty && last.isEmpty) return "Unknown Driver";
+      return last.isEmpty ? first : "$first $last";
+    } catch (e) {
+      print('Error getting user name for UID $uid: $e');
+      return "Unknown Driver";
+    }
+  }
+
 }
 
 void testProfileSave() async {
