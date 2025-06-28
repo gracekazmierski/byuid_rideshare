@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
+import 'package:byui_rideshare/services/user_service.dart';
 
 class RideDetailScreen extends StatefulWidget {
   final Ride ride; // The initial ride object passed from RideListScreen
@@ -120,7 +121,19 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   'Fare:',
                   '\$${currentRide.fare?.toStringAsFixed(2) ?? 'N/A'}',
                 ),
-                _buildDetailRow('Driver:', currentRide.driverName),
+                FutureBuilder<String?>(
+                  future: UserService.getUserName(currentRide.driverUid),
+                  builder: (context, snapshot) {
+                    String name = "Unknown Driver";
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      name = "Loading...";
+                    } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                      name = snapshot.data!;
+                    }
+
+                    return _buildDetailRow('Driver:', name);
+                  },
+                ),
                 _buildDetailRow('Status:', rideIsFull ? 'Full' : 'Available'),
 
                 if (hasJoined)

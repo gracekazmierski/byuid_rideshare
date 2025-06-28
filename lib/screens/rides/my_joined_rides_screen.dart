@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
 import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart'; // Import the new detail screen
 import 'package:byui_rideshare/services/ride_service.dart';
+import 'package:byui_rideshare/services/user_service.dart';
 
 class MyJoinedRidesScreen extends StatefulWidget {
   const MyJoinedRidesScreen({super.key});
@@ -121,9 +122,22 @@ class _MyJoinedRidesScreenState extends State<MyJoinedRidesScreen> {
                           'Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}',
                           style: const TextStyle(fontSize: 14),
                         ),
-                        Text(
-                          'Driver: ${ride.driverName}',
-                          style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                        FutureBuilder<String?>(
+                          future: UserService.getUserName(ride.driverUid),
+                          builder: (context, snapshot) {
+                            String name = "Unknown Driver";
+
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              name = "Loading...";
+                            } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                              name = snapshot.data!;
+                            }
+
+                            return Text(
+                              'Driver: $name',
+                              style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                            );
+                          },
                         ),
                         Text(
                           'Posted: ${DateFormat('MMM d, h:mm a').format(ride.postCreationTime.toDate())}',
