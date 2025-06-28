@@ -1,7 +1,10 @@
 // lib/screens/profile/edit_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
+import 'auth_wrapper.dart';
 
 enum UserRole { rider, driver }
 
@@ -16,10 +19,10 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _facebookController = TextEditingController();
-  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -32,91 +35,224 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   bool _isLoading = true;
 
+  Future<void> _changePassword() async {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        bool obscureCurrent = true;
+        bool obscureNew = true;
+
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text("Change Password"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentPasswordController,
+                  obscureText: obscureCurrent,
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureCurrent ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureCurrent = !obscureCurrent;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: obscureNew,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureNew ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureNew = !obscureNew;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("Cancel")),
+              TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text("Change")),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result == true) {
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        final email = user?.email;
+        if (user == null || email == null) throw Exception("User not signed in");
+
+        final cred = EmailAuthProvider.credential(
+          email: email,
+          password: currentPasswordController.text,
+        );
+
+        await user.reauthenticateWithCredential(cred);
+        await user.updatePassword(newPasswordController.text);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password changed successfully.")),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to change password: ${e.toString()}")),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      _loadUserProfile(currentUser.uid);
+    }
   }
 
-  Future<void> _loadUserProfile() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
+  // to allow for phone input to have the dashes
+  final _phoneFormatter = MaskTextInputFormatter(
+    mask: '(###) ###-####',
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
 
-    _emailController.text = currentUser.email ?? '';
-    final userProfile = await UserService.fetchUserProfile(currentUser.uid);
-    if (userProfile != null) {
-      _nameController.text = userProfile.name;
-      _phoneController.text = userProfile.phoneNumber;
-      _facebookController.text = userProfile.facebookUsername ?? '';
-      _selectedRole = userProfile.isDriver ? UserRole.driver : UserRole.rider;
+  // for _loadProfileData
+  String _formatPhoneNumber(String number) {
+    final digits = number.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 10) {
+      return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
+    }
+    return number; // Return as-is if not 10 digits
+  }
 
-      if (_selectedRole == UserRole.driver) {
-        _vehicleMakeController.text = userProfile.vehicleMake ?? '';
-        _vehicleModelController.text = userProfile.vehicleModel ?? '';
-        _vehicleColorController.text = userProfile.vehicleColor ?? '';
-        _vehicleYearController.text = userProfile.vehicleYear?.toString() ?? '';
+  Future<void> _loadUserProfile(String uid) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final profile = await UserService.fetchUserProfile(uid);
+    if (profile != null) {
+      _firstNameController.text = profile.firstName;
+      _lastNameController.text = profile.lastName;
+      _phoneController.text = _formatPhoneNumber(profile.phoneNumber);
+      _facebookController.text = profile.facebookUsername ?? '';
+
+      if (profile.isDriver) {
+        _selectedRole = UserRole.driver;
+        _vehicleMakeController.text = profile.vehicleMake ?? '';
+        _vehicleModelController.text = profile.vehicleModel ?? '';
+        _vehicleColorController.text = profile.vehicleColor ?? '';
+        _vehicleYearController.text = profile.vehicleYear?.toString() ?? '';
+      } else {
+        _selectedRole = UserRole.rider;
       }
     }
 
-    setState(() => _isLoading = false);
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _saveChanges() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
-
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await UserService.updateUserProfile(currentUser.uid, {
-        'name': _nameController.text.trim(),
-        'phoneNumber': _phoneController.text.trim(),
-        'facebookUsername': _facebookController.text.trim(),
-        'isDriver': _selectedRole == UserRole.driver,
-        'vehicleMake': _selectedRole == UserRole.driver ? _vehicleMakeController.text.trim() : null,
-        'vehicleModel': _selectedRole == UserRole.driver ? _vehicleModelController.text.trim() : null,
-        'vehicleColor': _selectedRole == UserRole.driver ? _vehicleColorController.text.trim() : null,
-        'vehicleYear': _selectedRole == UserRole.driver
-            ? int.tryParse(_vehicleYearController.text.trim())
-            : null,
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
       });
 
-      if (_emailController.text.trim() != currentUser.email) {
-        await UserService.updateUserEmail(_emailController.text.trim());
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not logged in.')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final userProfile = UserProfile(
+        uid: currentUser.uid,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phoneNumber: _phoneFormatter.getUnmaskedText(),
+        facebookUsername: _facebookController.text.trim(),
+        isDriver: _selectedRole == UserRole.driver,
+        vehicleMake: _selectedRole == UserRole.driver
+            ? _vehicleMakeController.text.trim()
+            : null,
+        vehicleModel: _selectedRole == UserRole.driver
+            ? _vehicleModelController.text.trim()
+            : null,
+        vehicleColor: _selectedRole == UserRole.driver
+            ? _vehicleColorController.text.trim()
+            : null,
+        vehicleYear: _selectedRole == UserRole.driver
+            ? int.tryParse(_vehicleYearController.text.trim())
+            : null,
+      );
+
+      try {
+        await UserService.saveUserProfile(userProfile);
+
+        // Update Firebase Auth displayName with the name from the profile setup
+        await currentUser.updateDisplayName(
+            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+        );
+
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Verification email sent to ${_emailController.text.trim()}. Please verify to complete update.'),
-          ),
+          const SnackBar(content: Text('Profile saved successfully!')),
         );
+        // Navigate to the main part of the app
+        // Replace with your actual navigation logic and route
+        // Assuming AuthWrapper correctly directs to the main content
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AuthWrapper()));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
-
-      if (_passwordController.text.trim().isNotEmpty) {
-        await UserService.updateUserPassword(_passwordController.text.trim());
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated!')),
-      );
-
-      Navigator.of(context).pop();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _facebookController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _vehicleMakeController.dispose();
     _vehicleModelController.dispose();
@@ -138,26 +274,34 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                controller: _firstNameController,
+                decoration: const InputDecoration(labelText: 'First Name'),
                 validator: (value) =>
-                value == null || value.isEmpty ? 'Enter your name' : null,
+                    value == null || value.isEmpty ? 'Enter your first name' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(labelText: 'Last Name'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter your last name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(labelText: 'Phone Number'),
                 keyboardType: TextInputType.phone,
-                validator: (value) =>
-                value == null || value.isEmpty ? 'Enter phone number' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                value == null || value.isEmpty ? 'Enter email' : null,
+                inputFormatters: [_phoneFormatter],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your phone number';
+                  }
+                  // Check if all digits are entered
+                  if (_phoneFormatter.getUnmaskedText().length != 10) {
+                    return 'Please enter a valid 10-digit phone number';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -165,24 +309,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 decoration: const InputDecoration(labelText: 'Facebook Username'),
                 validator: (value) =>
                 value == null || value.isEmpty ? 'Enter facebook username' : null,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'New Password (optional)',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-                obscureText: _obscurePassword,
               ),
               const SizedBox(height: 24),
               const Text('Select Your Role:', style: TextStyle(fontSize: 16)),
@@ -222,6 +348,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   keyboardType: TextInputType.number,
                 ),
               ],
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _changePassword,
+                child: const Text("Change Password"),
+              ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _saveChanges,

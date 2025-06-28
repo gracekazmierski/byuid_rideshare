@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For getting current user UID
 import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart'; // For phone input with dashes
 // Import your main app screen (e.g., MyHomePage or RideListScreen)
 // import '../home_screen.dart'; // Replace with your actual home screen import
 import '../auth/auth_wrapper.dart'; // Assuming this leads to your main screen or dashboard
@@ -20,7 +21,8 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _facebookController = TextEditingController();
   UserRole _selectedRole = UserRole.rider; // Default role
@@ -34,9 +36,65 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final UserService _userService = UserService();
   bool _isLoading = false;
 
+  // to preload info for edit profile data
+  @override
+  void initState() {
+    super.initState();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      _loadProfileData(currentUser.uid);
+    }
+  }
+
+  // to allow for phone input to have the dashes
+  final _phoneFormatter = MaskTextInputFormatter(
+    mask: '(###) ###-####',
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
+
+  // for _loadProfileData
+  String _formatPhoneNumber(String number) {
+  final digits = number.replaceAll(RegExp(r'\D'), '');
+  if (digits.length == 10) {
+    return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
+  }
+    return number; // Return as-is if not 10 digits
+  }
+
+  Future<void> _loadProfileData(String uid) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final profile = await UserService.fetchUserProfile(uid);
+    if (profile != null) {
+      _firstNameController.text = profile.firstName;
+      _lastNameController.text = profile.lastName;
+      _phoneController.text = _formatPhoneNumber(profile.phoneNumber);
+      _facebookController.text = profile.facebookUsername ?? '';
+
+      if (profile.isDriver) {
+        _selectedRole = UserRole.driver;
+        _vehicleMakeController.text = profile.vehicleMake ?? '';
+        _vehicleModelController.text = profile.vehicleModel ?? '';
+        _vehicleColorController.text = profile.vehicleColor ?? '';
+        _vehicleYearController.text = profile.vehicleYear?.toString() ?? '';
+      } else {
+        _selectedRole = UserRole.rider;
+      }
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _facebookController.dispose();
     _vehicleMakeController.dispose();
@@ -65,8 +123,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       final userProfile = UserProfile(
         uid: currentUser.uid,
-        name: _nameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phoneNumber: _phoneFormatter.getUnmaskedText(),
         facebookUsername: _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
         vehicleMake: _selectedRole == UserRole.driver
@@ -85,12 +144,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       try {
         await UserService.saveUserProfile(userProfile);
-
-        // --- NEW LINE ADDED HERE ---
+        
         // Update Firebase Auth displayName with the name from the profile setup
-        await currentUser.updateDisplayName(_nameController.text.trim());
-        print('Firebase Auth Display Name Updated: ${currentUser.displayName}');
-        // --- END NEW LINE ---
+        await currentUser.updateDisplayName(
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+          );
+
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
@@ -124,11 +183,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: ListView(
             children: <Widget>[
               TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                controller: _firstNameController,
+                decoration: const InputDecoration(labelText: 'First Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
+                    return 'Please enter your first name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(labelText: 'Last Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your last name';
                   }
                   return null;
                 },
@@ -138,11 +207,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 controller: _phoneController,
                 decoration: const InputDecoration(labelText: 'Phone Number'),
                 keyboardType: TextInputType.phone,
+                inputFormatters: [_phoneFormatter],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your phone number';
                   }
-                  // Add more specific phone validation if needed
+                  // Check if all digits are entered
+                  if (_phoneFormatter.getUnmaskedText().length != 10) {
+                    return 'Please enter a valid 10-digit phone number';
+                  }
                   return null;
                 },
               ),

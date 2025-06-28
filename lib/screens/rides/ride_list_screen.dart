@@ -11,6 +11,7 @@ import 'package:byui_rideshare/screens/rides/my_rides_screen.dart'; // My Posted
 import 'package:byui_rideshare/screens/rides/my_joined_rides_screen.dart';
 import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // Assuming this is your edit profile screen - From Grace
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // For Car icon - From Grace
+import 'package:byui_rideshare/services/user_service.dart';
 
 // Define colors based on the React design - From Grace
 const Color BYUI_BLUE = Color(0xFF006eb6);
@@ -114,7 +115,7 @@ class _RideListScreenState extends State<RideListScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()), // Using Grace's ProfileSetupScreen
+                          MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
                         );
                       },
                     ),
@@ -301,19 +302,6 @@ class _RideListScreenState extends State<RideListScreen> {
   Widget _buildRideCard(BuildContext context, Ride ride) {
     final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
 
-    // Get driver initials for avatar
-    String driverInitials = ride.driverName
-        .split(' ')
-        .map((name) => name.isNotEmpty ? name[0] : '')
-        .join()
-        .toUpperCase();
-    if (driverInitials.length > 2) {
-      driverInitials = driverInitials.substring(0, 2);
-    }
-    if (driverInitials.isEmpty) {
-      driverInitials = '?';
-    }
-
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       elevation: 2,
@@ -405,26 +393,56 @@ class _RideListScreenState extends State<RideListScreen> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 12,
-                        backgroundColor: const Color(0xFFe6f1fa),
-                        child: Text(
-                          driverInitials,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: BYUI_BLUE,
+                  FutureBuilder<String?>(
+                    future: UserService.getUserName(ride.driverUid),
+                    builder: (context, snapshot) {
+                      final name = snapshot.data ?? "Unknown Driver";
+
+                      // Calculate initials
+                      String initials = name
+                          .split(' ')
+                          .map((word) => word.isNotEmpty ? word[0] : '')
+                          .join()
+                          .toUpperCase();
+                      if (initials.length > 2) initials = initials.substring(0, 2);
+                      if (initials.isEmpty) initials = '?';
+
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 12,
+                              backgroundColor: Color(0xFFe6f1fa),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 4),
+                            Text("Loading...", style: TextStyle(fontSize: 12, color: GRAY_500)),
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundColor: const Color(0xFFe6f1fa),
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: BYUI_BLUE,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        ride.driverName,
-                        style: const TextStyle(fontSize: 12, color: GRAY_500),
-                      ),
-                    ],
+                          const SizedBox(width: 4),
+                          Text(
+                            name,
+                            style: const TextStyle(fontSize: 12, color: GRAY_500),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -544,7 +562,7 @@ class _RideListScreenState extends State<RideListScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+                  MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
                 );
               },
               customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

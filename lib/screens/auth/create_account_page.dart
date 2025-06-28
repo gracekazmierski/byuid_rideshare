@@ -48,7 +48,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       if (user != null) {
         UserProfile profile = UserProfile(
           uid: user.uid,
-          name: user.email!.split('@')[0],
+          // This is the resolved section
+          firstName: user.email!.split('@')[0], // Use email prefix as first name
+          lastName: '', // Leave last name empty for now
           isDriver: _isDriver,
           phoneNumber: '',
         );
@@ -193,128 +195,4 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                             focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
                                 borderSide: const BorderSide(
-                                    color: AppColors.inputFocusBlue, width: 2.0)),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _showPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: AppColors.textGray500,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _showPassword = !_showPassword;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-                        // Driver Checkbox
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _isDriver,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _isDriver = value ?? false;
-                                });
-                              },
-                              activeColor: AppColors.byuiBlue,
-                              side: BorderSide(color: AppColors.gray300, width: 2),
-                            ),
-                            const Text("I am a driver"),
-                          ],
-                        ),
-                        const SizedBox(height: 16.0),
-                        // Create Account Button
-                        SizedBox(
-                          height: 48.0,
-                          child: ElevatedButton(
-                            onPressed: _signUp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.byuiBlue,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0)),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 3, color: Colors.white),
-                            )
-                                : const Text('Create Account',
-                                style: TextStyle(fontWeight: FontWeight.w500)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24.0),
-
-                  // "Or" Divider (Optional but good for UX)
-                  const Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text("OR", style: TextStyle(color: AppColors.textGray500)),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 24.0),
-
-                  // Sign In with Google Button
-                  SizedBox(
-                    height: 48.0,
-                    child: OutlinedButton.icon(
-                      icon: Image.asset('assets/images/google_icon.png', height: 20.0), // Note: Add a google icon to your assets
-                      label: const Text('Sign In with Google'),
-                      onPressed: () {
-                        // TODO: Implement Google Sign-In logic
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.gray700,
-                        backgroundColor: Colors.transparent,
-                        side: const BorderSide(color: AppColors.gray300),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24.0),
-
-                  // "Already have an account?" link
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                          color: AppColors.textGray600,
-                          fontSize: 14.0,
-                          fontFamily: 'Roboto'),
-                      children: [
-                        const TextSpan(text: 'Already have an account? '),
-                        TextSpan(
-                          text: 'Sign In',
-                          style: const TextStyle(
-                              color: AppColors.byuiBlue,
-                              fontWeight: FontWeight.w500),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.of(context).pop();
-                            },
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
+                                    color: AppColors.inputFocusB

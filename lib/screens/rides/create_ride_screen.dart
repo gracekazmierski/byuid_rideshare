@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
+import 'package:byui_rideshare/services/user_service.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/screens/rides/ride_confirmation_screen.dart'; // Ensure this is imported
 
@@ -16,7 +17,7 @@ class CreateRideScreen extends StatefulWidget {
 
 class _CreateRideScreenState extends State<CreateRideScreen> {
   final _formkey = GlobalKey<FormState>();
-
+  
   final TextEditingController _originController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
   final TextEditingController _availableSeatsController = TextEditingController();
@@ -73,6 +74,15 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
         return;
       }
 
+      // Fetch UserProfile
+      final userProfile = await UserService.fetchUserProfile(user.uid);
+      if (userProfile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User profile not found.')),
+        );
+        return;
+      }
+
       if (_selectedDate == null || _selectedTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select both date and time for the ride.')),
@@ -105,7 +115,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
         availableSeats: availableSeats,
         fare: fare,
         driverUid: user.uid,
-        driverName: user.displayName ?? 'Unknown Driver',
+        driverName: '${userProfile.firstName} ${userProfile.lastName}',
         rideDate: Timestamp.fromDate(finalRideDateTime),
         postCreationTime: Timestamp.now(),
         isFull: false, // New: Default to not full
