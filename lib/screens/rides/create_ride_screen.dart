@@ -6,7 +6,8 @@ import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:intl/intl.dart';
-import 'package:byui_rideshare/screens/rides/ride_confirmation_screen.dart'; // Ensure this is imported
+import 'package:byui_rideshare/screens/rides/ride_confirmation_screen.dart';
+import 'package:byui_rideshare/theme/app_colors.dart'; // Import app colors
 
 class CreateRideScreen extends StatefulWidget {
   const CreateRideScreen({super.key});
@@ -17,18 +18,19 @@ class CreateRideScreen extends StatefulWidget {
 
 class _CreateRideScreenState extends State<CreateRideScreen> {
   final _formkey = GlobalKey<FormState>();
-  
-  final TextEditingController _originController = TextEditingController();
-  final TextEditingController _destinationController = TextEditingController();
-  final TextEditingController _availableSeatsController = TextEditingController();
-  final TextEditingController _fareController = TextEditingController();
-  final TextEditingController _rideDateController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
+
+  final _originController = TextEditingController();
+  final _destinationController = TextEditingController();
+  final _availableSeatsController = TextEditingController();
+  final _fareController = TextEditingController();
+  final _rideDateController = TextEditingController();
+  final _timeController = TextEditingController();
 
   final FocusNode _fareFocusNode = FocusNode();
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  bool _isLoading = false; // Added for loading indicator
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
   @override
   void dispose() {
+    // ... dispose all controllers and focus nodes
     _originController.dispose();
     _destinationController.dispose();
     _availableSeatsController.dispose();
@@ -65,185 +68,230 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
   void _postRide() async {
     if (_formkey.currentState!.validate()) {
-      final user = FirebaseAuth.instance.currentUser;
+      setState(() => _isLoading = true);
 
+      final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in.')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+        setState(() => _isLoading = false);
         return;
       }
 
-      // Fetch UserProfile
       final userProfile = await UserService.fetchUserProfile(user.uid);
-      if (userProfile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User profile not found.')),
-        );
+      if (userProfile == null || !mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not retrieve user profile.')));
+        setState(() => _isLoading = false);
         return;
       }
 
       if (_selectedDate == null || _selectedTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select both date and time for the ride.')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select both date and time.')));
+        setState(() => _isLoading = false);
         return;
       }
 
-      DateTime finalRideDateTime = DateTime(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
-      );
-
+      DateTime finalRideDateTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
       final int? availableSeats = int.tryParse(_availableSeatsController.text);
       final double? fare = double.tryParse(_fareController.text);
 
-      if (availableSeats == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid number for available seats.')),
-        );
-        return;
-      }
-
       final ride = Ride(
-        id: '', // New rides start with an empty ID, it will be set by Firestore
-        origin: _originController.text,
-        destination: _destinationController.text,
-        availableSeats: availableSeats,
+        id: '',
+        origin: _originController.text.trim(),
+        destination: _destinationController.text.trim(),
+        availableSeats: availableSeats!,
         fare: fare,
         driverUid: user.uid,
         driverName: '${userProfile.firstName} ${userProfile.lastName}',
         rideDate: Timestamp.fromDate(finalRideDateTime),
         postCreationTime: Timestamp.now(),
-        isFull: false, // New: Default to not full
-        joinedUserUids: [], // New: Default to empty
+        isFull: false,
+        joinedUserUids: [],
       );
 
       try {
-        await RideService.saveRideListing(ride); // Save new ride
-        // On success, navigate to the confirmation screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RideConfirmationScreen(ride: ride), // Pass the ride object
-          ),
-        );
+        await RideService.saveRideListing(ride);
+        if (!mounted) return;
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post ride: $e')),
-        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post ride: $e')));
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
+  }
+
+  // Helper for consistent text field styling
+  InputDecoration _inputDecoration({required String labelText, Widget? suffixIcon}) {
+    return InputDecoration(
+      labelText: labelText,
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Offer a Ride")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formkey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _originController,
-                decoration: const InputDecoration(labelText: 'Origin'),
-                validator: (value) => value!.isEmpty ? 'Enter origin' : null,
-              ),
-              TextFormField(
-                controller: _destinationController,
-                decoration: const InputDecoration(labelText: 'Destination'),
-                validator: (value) => value!.isEmpty ? 'Enter Destination' : null,
-              ),
-              TextFormField(
-                controller: _availableSeatsController,
-                decoration: const InputDecoration(labelText: 'Available Seats'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter number of seats';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _fareController,
-                focusNode: _fareFocusNode,
-                decoration: const InputDecoration(labelText: 'Fare'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter fare';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid fare';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _rideDateController,
-                decoration: InputDecoration(
-                  labelText: 'Date',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () async {
-                      DateTime? tempPickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate ?? DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2101),
-                      );
-                      if (tempPickedDate != null) {
-                        setState(() {
-                          _selectedDate = tempPickedDate;
-                          _rideDateController.text = DateFormat('yyyy-MM-dd').format(tempPickedDate);
-                        });
-                      }
-                    },
-                  ),
+      backgroundColor: AppColors.gray50,
+      body: Column(
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            color: AppColors.byuiBlue,
+            padding: const EdgeInsets.fromLTRB(16.0, 60.0, 16.0, 24.0),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
-                readOnly: true,
-                validator: (value) => value!.isEmpty ? 'Enter date' : null,
-              ),
-              TextFormField(
-                controller: _timeController,
-                decoration: InputDecoration(
-                  labelText: 'Time',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.access_time),
-                    onPressed: () async {
-                      TimeOfDay? tempPickedTime = await showTimePicker(
-                        context: context,
-                        initialTime: _selectedTime ?? TimeOfDay.now(),
-                      );
-                      if (tempPickedTime != null) {
-                        setState(() {
-                          _selectedTime = tempPickedTime;
-                          _timeController.text = tempPickedTime.format(context);
-                        });
-                      }
-                    },
-                  ),
+                const SizedBox(width: 8),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Offer a Ride', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                    SizedBox(height: 4.0),
+                    Text("Fill out the details below", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  ],
                 ),
-                readOnly: true,
-                validator: (value) => value!.isEmpty ? 'Enter time' : null,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _postRide,
-                child: const Text('Post Ride'),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          // Form Body
+          Expanded(
+            child: Form(
+              key: _formkey,
+              child: ListView(
+                padding: const EdgeInsets.all(24.0),
+                children: [
+                  _buildSectionCard(
+                    title: 'Route Details',
+                    children: [
+                      TextFormField(
+                        controller: _originController,
+                        decoration: _inputDecoration(labelText: 'Origin (e.g., Rexburg, ID)'),
+                        validator: (v) => v!.isEmpty ? 'Please enter an origin' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _destinationController,
+                        decoration: _inputDecoration(labelText: 'Destination (e.g., Salt Lake City, UT)'),
+                        validator: (v) => v!.isEmpty ? 'Please enter a destination' : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionCard(
+                    title: 'Ride Specifics',
+                    children: [
+                      TextFormField(
+                        controller: _availableSeatsController,
+                        decoration: _inputDecoration(labelText: 'Available Seats'),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (v == null || v.isEmpty || int.tryParse(v) == null) ? 'Enter a valid number' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _fareController,
+                        focusNode: _fareFocusNode,
+                        decoration: _inputDecoration(labelText: 'Fare per person (\$)'),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        validator: (v) => (v == null || v.isEmpty || double.tryParse(v) == null) ? 'Enter a valid fare' : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionCard(
+                    title: 'Schedule',
+                    children: [
+                      TextFormField(
+                        controller: _rideDateController,
+                        decoration: _inputDecoration(
+                          labelText: 'Date',
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () async {
+                              DateTime? picked = await showDatePicker(context: context, initialDate: _selectedDate ?? DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2101));
+                              if (picked != null) {
+                                setState(() {
+                                  _selectedDate = picked;
+                                  _rideDateController.text = DateFormat('EEEE, MMMM d, yyyy').format(picked);
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        readOnly: true,
+                        validator: (v) => v!.isEmpty ? 'Please select a date' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _timeController,
+                        decoration: _inputDecoration(
+                          labelText: 'Time',
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.access_time),
+                            onPressed: () async {
+                              TimeOfDay? picked = await showTimePicker(context: context, initialTime: _selectedTime ?? TimeOfDay.now());
+                              if (picked != null) {
+                                setState(() {
+                                  _selectedTime = picked;
+                                  _timeController.text = picked.format(context);
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        readOnly: true,
+                        validator: (v) => v!.isEmpty ? 'Please select a time' : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    height: 48.0,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _postRide,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.byuiBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                          : const Text('Post Ride', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper widget to build the styled cards for each section
+  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          const SizedBox(height: 20),
+          ...children,
+        ],
       ),
     );
   }
