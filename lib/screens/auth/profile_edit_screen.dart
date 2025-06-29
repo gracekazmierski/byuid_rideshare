@@ -5,7 +5,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_colors.dart';
-import '../rides/ride_list_screen.dart'; // Navigate back to main screen
+import '../rides/ride_list_screen.dart';
 
 enum UserRole { rider, driver }
 
@@ -19,7 +19,6 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  // Controllers for all fields
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -30,10 +29,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _vehicleYearController = TextEditingController();
 
   UserRole _selectedRole = UserRole.rider;
-  bool _isLoading = true; // For initial load
-  bool _isSaving = false; // For save button state
+  bool _isLoading = true;
+  bool _isSaving = false;
 
-  // Phone formatter defined once as a class member
   final _phoneFormatter = MaskTextInputFormatter(
     mask: '###-###-####',
     filter: {"#": RegExp(r'[0-9]')},
@@ -48,7 +46,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   void dispose() {
-    // Dispose all controllers
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
@@ -61,6 +58,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    // ... (logic is unchanged)
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       setState(() => _isLoading = false);
@@ -72,7 +70,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       setState(() {
         _firstNameController.text = profile.firstName;
         _lastNameController.text = profile.lastName;
-        // The mask formatter will automatically format the raw phone number
         _phoneController.text = profile.phoneNumber;
         _facebookController.text = profile.facebookUsername ?? '';
 
@@ -93,12 +90,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _saveChanges() async {
+    // ... (logic is unchanged)
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
 
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        // Handle error
         setState(() => _isSaving = false);
         return;
       }
@@ -143,7 +140,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _changePassword() async {
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
-    final formKey = GlobalKey<FormState>(); // Key for validation inside the dialog
+    final formKey = GlobalKey<FormState>();
 
     final result = await showDialog<bool>(
       context: context,
@@ -151,15 +148,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         bool obscureCurrent = true;
         bool obscureNew = true;
 
-        // Use a StatefulBuilder to manage the state of the dialog independently
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
-            title: const Text("Change Password"),
+            // Styled shape and title
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+            title: const Text(
+              "Change Password",
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textGray600),
+            ),
             content: Form(
               key: formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Styled "Current Password" field
                   TextFormField(
                     controller: currentPasswordController,
                     obscureText: obscureCurrent,
@@ -172,6 +174,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     validator: (v) => v!.isEmpty ? 'Cannot be empty' : null,
                   ),
                   const SizedBox(height: 16),
+                  // Styled "New Password" field
                   TextFormField(
                     controller: newPasswordController,
                     obscureText: obscureNew,
@@ -190,20 +193,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 ],
               ),
             ),
+            // Styled action buttons
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text("Cancel"),
+                child: const Text("Cancel", style: TextStyle(color: AppColors.textGray500)),
               ),
               ElevatedButton(
                 onPressed: () {
-                  // Validate the dialog's form before closing
                   if (formKey.currentState!.validate()) {
                     Navigator.of(context).pop(true);
                   }
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.byuiBlue),
-                child: const Text("Change", style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.byuiBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                ),
+                child: const Text("Change"),
               ),
             ],
           ),
@@ -211,7 +218,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       },
     );
 
-    // This part remains the same, it runs after the dialog is closed.
     if (result == true) {
       try {
         final user = FirebaseAuth.instance.currentUser;
@@ -240,9 +246,44 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       }
     }
 
-    // Clean up controllers
     currentPasswordController.dispose();
     newPasswordController.dispose();
+  }
+
+  // --- NEW: AppBar Widget ---
+  // This now matches the structure from your other screens
+  // In lib/screens/profile/profile_edit_screen.dart
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight + 40),
+      child: Container(
+        color: AppColors.byuiBlue,
+        // The 'const' keyword has been removed from the next line
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 8),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Edit Profile', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 2.0),
+                  Text("Keep your information up to date", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // --- UI Build Method ---
@@ -250,132 +291,104 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      body: Column(
+      // --- CHANGE: Using the new AppBar method ---
+      appBar: _buildAppBar(context),
+      // --- CHANGE: The body no longer contains the header ---
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
         children: [
-          // Header
-          Container(
-            width: double.infinity,
-            color: AppColors.byuiBlue,
-            padding: const EdgeInsets.fromLTRB(16.0, 60.0, 16.0, 24.0),
-            child: Row(
+          Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                const SizedBox(width: 8),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                _buildSectionCard(
+                  title: 'Personal Information',
                   children: [
-                    Text('Edit Profile', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 4.0),
-                    Text("Keep your information up to date", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                    TextFormField(controller: _firstNameController, decoration: _inputDecoration(labelText: 'First Name'), validator: (v) => v!.isEmpty ? 'Enter first name' : null),
+                    const SizedBox(height: 16),
+                    TextFormField(controller: _lastNameController, decoration: _inputDecoration(labelText: 'Last Name'), validator: (v) => v!.isEmpty ? 'Enter last name' : null),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: _inputDecoration(labelText: 'Phone Number'),
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [_phoneFormatter],
+                      validator: (v) => _phoneFormatter.getUnmaskedText().length != 10 ? 'Enter a valid 10-digit phone number' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(controller: _facebookController, decoration: _inputDecoration(labelText: 'Facebook Username')),
                   ],
                 ),
+                const SizedBox(height: 24),
+                _buildSectionCard(
+                  title: 'Account Security',
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.lock_outline),
+                      label: const Text('Change Password'),
+                      onPressed: _changePassword,
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.byuiBlue,
+                          side: const BorderSide(color: AppColors.gray200),
+                          minimumSize: const Size(double.infinity, 48)
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildSectionCard(
+                  title: 'Your Role',
+                  children: [
+                    ToggleButtons(
+                      isSelected: [_selectedRole == UserRole.rider, _selectedRole == UserRole.driver],
+                      onPressed: (index) => setState(() => _selectedRole = index == 0 ? UserRole.rider : UserRole.driver),
+                      borderRadius: BorderRadius.circular(8.0),
+                      selectedColor: Colors.white,
+                      fillColor: AppColors.byuiBlue,
+                      color: AppColors.byuiBlue,
+                      constraints: BoxConstraints(minHeight: 48.0, minWidth: (MediaQuery.of(context).size.width - 110) / 2),
+                      children: const [Text('Rider'), Text('Driver')],
+                    )
+                  ],
+                ),
+                if (_selectedRole == UserRole.driver) ...[
+                  const SizedBox(height: 24),
+                  _buildSectionCard(
+                    title: 'Vehicle Information',
+                    children: [
+                      TextFormField(controller: _vehicleMakeController, decoration: _inputDecoration(labelText: 'Vehicle Make')),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _vehicleModelController, decoration: _inputDecoration(labelText: 'Vehicle Model')),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _vehicleColorController, decoration: _inputDecoration(labelText: 'Vehicle Color')),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _vehicleYearController, decoration: _inputDecoration(labelText: 'Vehicle Year'), keyboardType: TextInputType.number),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-          // Body
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Stack(
-              children: [
-                Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 100), // Padding for Save button
-                    children: [
-                      _buildSectionCard(
-                        title: 'Personal Information',
-                        children: [
-                          TextFormField(controller: _firstNameController, decoration: _inputDecoration(labelText: 'First Name'), validator: (v) => v!.isEmpty ? 'Enter first name' : null),
-                          const SizedBox(height: 16),
-                          TextFormField(controller: _lastNameController, decoration: _inputDecoration(labelText: 'Last Name'), validator: (v) => v!.isEmpty ? 'Enter last name' : null),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _phoneController,
-                            decoration: _inputDecoration(labelText: 'Phone Number'),
-                            keyboardType: TextInputType.phone,
-                            inputFormatters: [_phoneFormatter],
-                            validator: (v) => _phoneFormatter.getUnmaskedText().length != 10 ? 'Enter a valid 10-digit phone number' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(controller: _facebookController, decoration: _inputDecoration(labelText: 'Facebook Username')),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionCard(
-                        title: 'Account Security',
-                        children: [
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.lock_outline),
-                            label: const Text('Change Password'),
-                            onPressed: _changePassword,
-                            style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.byuiBlue,
-                                side: const BorderSide(color: AppColors.gray200),
-                                minimumSize: const Size(double.infinity, 48)
-                            ),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionCard(
-                        title: 'Your Role',
-                        children: [
-                          ToggleButtons(
-                            isSelected: [_selectedRole == UserRole.rider, _selectedRole == UserRole.driver],
-                            onPressed: (index) => setState(() => _selectedRole = index == 0 ? UserRole.rider : UserRole.driver),
-                            borderRadius: BorderRadius.circular(8.0),
-                            selectedColor: Colors.white,
-                            fillColor: AppColors.byuiBlue,
-                            color: AppColors.byuiBlue,
-                            constraints: BoxConstraints(minHeight: 48.0, minWidth: (MediaQuery.of(context).size.width - 110) / 2),
-                            children: const [Text('Rider'), Text('Driver')],
-                          )
-                        ],
-                      ),
-                      if (_selectedRole == UserRole.driver) ...[
-                        const SizedBox(height: 24),
-                        _buildSectionCard(
-                          title: 'Vehicle Information',
-                          children: [
-                            TextFormField(controller: _vehicleMakeController, decoration: _inputDecoration(labelText: 'Vehicle Make')),
-                            const SizedBox(height: 16),
-                            TextFormField(controller: _vehicleModelController, decoration: _inputDecoration(labelText: 'Vehicle Model')),
-                            const SizedBox(height: 16),
-                            TextFormField(controller: _vehicleColorController, decoration: _inputDecoration(labelText: 'Vehicle Color')),
-                            const SizedBox(height: 16),
-                            TextFormField(controller: _vehicleYearController, decoration: _inputDecoration(labelText: 'Vehicle Year'), keyboardType: TextInputType.number),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
+              color: AppColors.gray50,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _saveChanges,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.byuiBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                 ),
-                // Anchored Save Button
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
-                    color: AppColors.gray50,
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : _saveChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.byuiBlue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                          : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ),
-              ],
+                child: _isSaving
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                    : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
             ),
           ),
         ],

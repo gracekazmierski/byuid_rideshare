@@ -19,7 +19,7 @@ class RideDetailScreen extends StatefulWidget {
 
 class _RideDetailScreenState extends State<RideDetailScreen> {
   User? _currentUser;
-  bool _isProcessing = false; // Used for any loading state (joining, accepting, etc.)
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -74,6 +74,39 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
   }
 
   // --- UI BUILDER WIDGETS ---
+
+  // Consistent AppBar Widget
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight + 40),
+      child: Container(
+        color: AppColors.byuiBlue,
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 8),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Ride Details', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 2.0),
+                  Text("View ride information", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Ride>(
@@ -88,53 +121,24 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.gray50,
-          // The AppBar is removed and replaced by the custom header in the body
-          body: Column(
+          appBar: _buildAppBar(context),
+          body: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
             children: [
-              // --- NEW BLUE HEADER ---
-              Container(
-                width: double.infinity,
-                color: AppColors.byuiBlue,
-                padding: const EdgeInsets.fromLTRB(16.0, 60.0, 16.0, 24.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    const SizedBox(width: 8),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Ride Details', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
-                        SizedBox(height: 4.0),
-                        Text("View ride information", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
-                      ],
-                    ),
+              ListView(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+                children: [
+                  _buildRouteCard(ride),
+                  const SizedBox(height: 16),
+                  _buildDetailsCard(ride),
+                  if (isDriver) ...[
+                    const SizedBox(height: 16),
+                    _buildDriverAdminCard(ride),
                   ],
-                ),
+                ],
               ),
-              Expanded(
-                child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : Stack(
-                  children: [
-                    ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100), // Added top padding
-                      children: [
-                        _buildRouteCard(ride),
-                        const SizedBox(height: 16),
-                        _buildDetailsCard(ride),
-                        if (isDriver) ...[
-                          const SizedBox(height: 16),
-                          _buildDriverAdminCard(ride),
-                        ],
-                      ],
-                    ),
-                    _buildActionButton(ride, isDriver, hasJoined, rideIsFull),
-                  ],
-                ),
-              ),
+              _buildActionButton(ride, isDriver, hasJoined, rideIsFull),
             ],
           ),
         );
@@ -142,14 +146,13 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     );
   }
 
-  // Card for Origin and Destination
   Widget _buildRouteCard(Ride ride) {
     return _buildSectionCard(
       child: Column(
         children: [
           _buildDetailTile(icon: Icons.my_location_rounded, title: 'Origin', subtitle: ride.origin, iconColor: AppColors.byuiGreen),
           Padding(
-            padding: const EdgeInsets.only(left: 18.0),
+            padding: const EdgeInsets.only(left: 28.0),
             child: Align(
               alignment: Alignment.centerLeft,
               child: SizedBox(
@@ -164,7 +167,6 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     );
   }
 
-  // Card for Date, Time, Fare, Driver, etc.
   Widget _buildDetailsCard(Ride ride) {
     return _buildSectionCard(
       child: Column(
@@ -175,23 +177,21 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                 return _buildDetailTile(icon: Icons.account_circle_rounded, title: 'Driver', subtitle: snapshot.data ?? 'Loading...');
               }
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
           _buildDetailTile(icon: Icons.calendar_today_rounded, title: 'Date & Time', subtitle: '${DateFormat('EEE, MMM d').format(ride.rideDate.toDate())} at ${DateFormat('h:mm a').format(ride.rideDate.toDate())}'),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
           _buildDetailTile(icon: Icons.group_rounded, title: 'Seats Available', subtitle: ride.availableSeats.toString()),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
           _buildDetailTile(icon: Icons.attach_money_rounded, title: 'Fare per Person', subtitle: '\$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}'),
         ],
       ),
     );
   }
 
-  // Special card only visible to the driver to manage their ride
   Widget _buildDriverAdminCard(Ride ride) {
     return _buildSectionCard(
       child: Column(
         children: [
-          // Section for pending join requests
           StreamBuilder<List<RideRequest>>(
               stream: RideService.fetchRequestsForRide(ride.id),
               builder: (context, snapshot) {
@@ -220,7 +220,6 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
               }
           ),
           const Divider(height: 1),
-          // Section for confirmed passengers
           ExpansionTile(
             title: const Text('Current Passengers', style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text('${ride.joinedUserUids.length} passenger(s)'),
@@ -238,7 +237,6 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
             ],
           ),
           const Divider(height: 1),
-          // Cancel Ride Button
           ListTile(
             leading: const Icon(Icons.delete_forever, color: AppColors.red500),
             title: const Text('Cancel This Ride', style: TextStyle(color: AppColors.red500)),
@@ -249,7 +247,6 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     );
   }
 
-  // The main action button anchored to the bottom of the screen
   Widget _buildActionButton(Ride ride, bool isDriver, bool hasJoined, bool rideIsFull) {
     String buttonText;
     VoidCallback? onPressedAction;
@@ -295,7 +292,6 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     );
   }
 
-  // --- HELPER WIDGETS ---
   Widget _buildSectionCard({required Widget child}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -317,7 +313,6 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
   }
 }
 
-// Custom painter for the dotted line, purely decorative
 class DottedLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
