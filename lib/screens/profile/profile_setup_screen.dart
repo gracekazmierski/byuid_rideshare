@@ -1,18 +1,16 @@
 // lib/screens/profile/profile_setup_screen.dart
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // For getting current user UID
-import '../../models/user_profile.dart';
-import '../../services/user_service.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart'; // For phone input with dashes
-// Import your main app screen (e.g., MyHomePage or RideListScreen)
-// import '../home_screen.dart'; // Replace with your actual home screen import
-import '../auth/auth_wrapper.dart'; // Assuming this leads to your main screen or dashboard
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:byui_rideshare/models/user_profile.dart';
+import 'package:byui_rideshare/services/user_service.dart';
+import 'package:byui_rideshare/screens/auth/auth_wrapper.dart';
+import 'package:byui_rideshare/theme/app_colors.dart';
 
 enum UserRole { rider, driver }
 
 class ProfileSetupScreen extends StatefulWidget {
   static const String routeName = '/profile-setup';
-
   const ProfileSetupScreen({super.key});
 
   @override
@@ -21,80 +19,27 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _facebookController = TextEditingController();
-  UserRole _selectedRole = UserRole.rider; // Default role
+  UserRole _selectedRole = UserRole.rider;
 
-  // Driver specific fields
   final _vehicleMakeController = TextEditingController();
   final _vehicleModelController = TextEditingController();
   final _vehicleColorController = TextEditingController();
   final _vehicleYearController = TextEditingController();
 
-  final UserService _userService = UserService();
   bool _isLoading = false;
 
-  // to preload info for edit profile data
-  @override
-  void initState() {
-    super.initState();
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      _loadProfileData(currentUser.uid);
-    }
-  }
-
-  // to allow for phone input to have the dashes
-  final _phoneFormatter = MaskTextInputFormatter(
-    mask: '(###) ###-####',
-    filter: { "#": RegExp(r'[0-9]') },
-    type: MaskAutoCompletionType.lazy,
+  // Formatter is correctly created here
+  final phoneMaskFormatter = MaskTextInputFormatter(
+      mask: '###-###-####',
+      filter: {"#": RegExp(r'[0-9]')}
   );
-
-  // for _loadProfileData
-  String _formatPhoneNumber(String number) {
-  final digits = number.replaceAll(RegExp(r'\D'), '');
-  if (digits.length == 10) {
-    return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
-  }
-    return number; // Return as-is if not 10 digits
-  }
-
-  Future<void> _loadProfileData(String uid) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final profile = await UserService.fetchUserProfile(uid);
-    if (profile != null) {
-      _firstNameController.text = profile.firstName;
-      _lastNameController.text = profile.lastName;
-      _phoneController.text = _formatPhoneNumber(profile.phoneNumber);
-      _facebookController.text = profile.facebookUsername ?? '';
-
-      if (profile.isDriver) {
-        _selectedRole = UserRole.driver;
-        _vehicleMakeController.text = profile.vehicleMake ?? '';
-        _vehicleModelController.text = profile.vehicleModel ?? '';
-        _vehicleColorController.text = profile.vehicleColor ?? '';
-        _vehicleYearController.text = profile.vehicleYear?.toString() ?? '';
-      } else {
-        _selectedRole = UserRole.rider;
-      }
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _nameController.dispose();
     _phoneController.dispose();
     _facebookController.dispose();
     _vehicleMakeController.dispose();
@@ -106,26 +51,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in.')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('User not logged in.')));
+          setState(() => _isLoading = false);
+        }
         return;
       }
 
+      final fullName = _nameController.text.trim();
+      final nameParts = fullName.split(' ');
+      final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
       final userProfile = UserProfile(
         uid: currentUser.uid,
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneFormatter.getUnmaskedText(),
+        firstName: firstName,
+        lastName: lastName,
+        // --- IMPROVEMENT 1: Save the unmasked (clean) phone number ---
+        phoneNumber: phoneMaskFormatter.getUnmaskedText(),
         facebookUsername: _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
         vehicleMake: _selectedRole == UserRole.driver
@@ -144,178 +92,199 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       try {
         await UserService.saveUserProfile(userProfile);
-        
-        // Update Firebase Auth displayName with the name from the profile setup
-        await currentUser.updateDisplayName(
-          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
-          );
+        await currentUser.updateDisplayName(fullName);
 
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
-        );
-        // Navigate to the main part of the app
-        // Replace with your actual navigation logic and route
-        // Assuming AuthWrapper correctly directs to the main content
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AuthWrapper()));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile saved successfully!')));
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const AuthWrapper()));
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to save profile: $e')));
+        }
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
+  }
+
+  InputDecoration _inputDecoration({required String labelText}) {
+    return InputDecoration(
+      labelText: labelText,
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: AppColors.gray300)
+      ),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Complete Your Profile'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: <Widget>[
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'First Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your first name';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Last Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your last name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                keyboardType: TextInputType.phone,
-                inputFormatters: [_phoneFormatter],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  // Check if all digits are entered
-                  if (_phoneFormatter.getUnmaskedText().length != 10) {
-                    return 'Please enter a valid 10-digit phone number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _facebookController,
-                decoration: const InputDecoration(labelText: 'Facebook Username'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your facebook username';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              const Text('Select Your Role:', style: TextStyle(fontSize: 16)),
-              RadioListTile<UserRole>(
-                title: const Text('Rider'),
-                value: UserRole.rider,
-                groupValue: _selectedRole,
-                onChanged: (UserRole? value) {
-                  setState(() {
-                    _selectedRole = value!;
-                  });
-                },
-              ),
-              RadioListTile<UserRole>(
-                title: const Text('Driver'),
-                value: UserRole.driver,
-                groupValue: _selectedRole,
-                onChanged: (UserRole? value) {
-                  setState(() {
-                    _selectedRole = value!;
-                  });
-                },
-              ),
-              if (_selectedRole == UserRole.driver) ...[
-                const SizedBox(height: 24),
-                const Text('Vehicle Information:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                TextFormField(
-                  controller: _vehicleMakeController,
-                  decoration: const InputDecoration(labelText: 'Vehicle Make (e.g., Toyota)'),
-                  validator: (value) {
-                    if (_selectedRole == UserRole.driver && (value == null || value.isEmpty)) {
-                      return 'Please enter vehicle make';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _vehicleModelController,
-                  decoration: const InputDecoration(labelText: 'Vehicle Model (e.g., Camry)'),
-                  validator: (value) {
-                    if (_selectedRole == UserRole.driver && (value == null || value.isEmpty)) {
-                      return 'Please enter vehicle model';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _vehicleColorController,
-                  decoration: const InputDecoration(labelText: 'Vehicle Color (e.g., Blue)'),
-                  validator: (value) {
-                    if (_selectedRole == UserRole.driver && (value == null || value.isEmpty)) {
-                      return 'Please enter vehicle color';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _vehicleYearController,
-                  decoration: const InputDecoration(labelText: 'Vehicle Year (e.g., 2020)'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (_selectedRole == UserRole.driver) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter vehicle year';
-                      }
-                      if (int.tryParse(value) == null || value.length != 4) {
-                        return 'Please enter a valid year';
-                      }
-                    }
-                    return null;
-                  },
-                ),
+      backgroundColor: AppColors.gray50,
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            color: AppColors.byuiBlue,
+            padding: const EdgeInsets.fromLTRB(16.0, 60.0, 16.0, 24.0),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Complete Your Profile', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                SizedBox(height: 4.0),
+                Text("Let's get you set up.", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
               ],
-              const SizedBox(height: 32),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                onPressed: _saveProfile,
-                child: const Text('Save Profile'),
-              ),
-            ],
+            ),
           ),
-        ),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(24.0),
+                children: [
+                  _buildSectionCard(
+                    title: 'Personal Information',
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: _inputDecoration(labelText: 'Full Name'),
+                        validator: (v) => v!.isEmpty ? 'Please enter your name' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      // --- THIS IS THE FULLY CORRECTED WIDGET ---
+                      TextFormField(
+                        controller: _phoneController,
+                        // 1. Apply the formatter
+                        inputFormatters: [phoneMaskFormatter],
+                        decoration: _inputDecoration(labelText: 'Phone Number'),
+                        keyboardType: TextInputType.phone,
+                        // 2. Improve the validation
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Please enter your phone number';
+                          }
+                          if (phoneMaskFormatter.getUnmaskedText().length != 10) {
+                            return 'Please enter a valid 10-digit phone number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _facebookController,
+                        decoration: _inputDecoration(labelText: 'Facebook Username'),
+                        validator: (v) => v!.isEmpty ? 'Please enter your Facebook username' : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionCard(
+                      title: 'Select Your Role',
+                      children: [
+                        ToggleButtons(
+                          isSelected: [_selectedRole == UserRole.rider, _selectedRole == UserRole.driver],
+                          onPressed: (index) {
+                            setState(() {
+                              _selectedRole = index == 0 ? UserRole.rider : UserRole.driver;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(8.0),
+                          selectedColor: Colors.white,
+                          fillColor: AppColors.byuiBlue,
+                          color: AppColors.byuiBlue,
+                          constraints: BoxConstraints(minHeight: 48.0, minWidth: (MediaQuery.of(context).size.width - 120) / 2),
+                          children: const [
+                            Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Rider')),
+                            Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Driver')),
+                          ],
+                        )
+                      ]
+                  ),
+                  if (_selectedRole == UserRole.driver) ...[
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                        title: 'Vehicle Information',
+                        children: [
+                          TextFormField(
+                            controller: _vehicleMakeController,
+                            decoration: _inputDecoration(labelText: 'Vehicle Make (e.g., Toyota)'),
+                            validator: (v) => v!.isEmpty ? 'Please enter vehicle make' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _vehicleModelController,
+                            decoration: _inputDecoration(labelText: 'Vehicle Model (e.g., Camry)'),
+                            validator: (v) => v!.isEmpty ? 'Please enter vehicle model' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _vehicleColorController,
+                            decoration: _inputDecoration(labelText: 'Vehicle Color (e.g., Blue)'),
+                            validator: (v) => v!.isEmpty ? 'Please enter vehicle color' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _vehicleYearController,
+                            decoration: _inputDecoration(labelText: 'Vehicle Year (e.g., 2022)'),
+                            keyboardType: TextInputType.number,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Please enter vehicle year';
+                              if (int.tryParse(v) == null || v.length != 4) return 'Please enter a valid year';
+                              return null;
+                            },
+                          ),
+                        ]
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    height: 48.0,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.byuiBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                          : const Text('Save Profile', style: TextStyle(fontWeight: FontWeight.w500)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          const SizedBox(height: 20),
+          ...children,
+        ],
       ),
     );
   }

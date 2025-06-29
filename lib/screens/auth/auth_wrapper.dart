@@ -1,38 +1,51 @@
 // lib/screens/auth/auth_wrapper.dart
-
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
-import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Import the screen for logged-in users
-import 'package:byui_rideshare/screens/auth/welcome_screen.dart'; // Import your WelcomeScreen
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:byui_rideshare/screens/rides/ride_list_screen.dart';
+import 'package:byui_rideshare/screens/auth/welcome_screen.dart'; // Or your login screen
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Listen to the authentication state changes
+    // This stream listens for authentication changes (login, logout)
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // If the connection is active and data is available (user logged in/out status)
-        if (snapshot.connectionState == ConnectionState.active) {
-          final user = snapshot.data; // Get the current user (null if logged out)
 
-          if (user == null) {
-            // User is logged out, show the WelcomeScreen
-            return const WelcomeScreen(); // Directs to your consolidated WelcomeScreen
-          } else {
-            // User is logged in, show the RideListScreen
-            return const RideListScreen();
-          }
+        // State 1: Waiting for Firebase to check for a saved user
+        // While it's checking, we show a loading spinner.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
 
-        // While waiting for the authentication state, show a loading indicator
-        return const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
+        // State 2: An error occurred with the auth stream
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(
+              child: Text('Something went wrong! Please restart the app.'),
+            ),
+          );
+        }
+
+        // State 3: We have data, meaning the user IS logged in
+        if (snapshot.hasData) {
+          // If snapshot.data is not null, a user is signed in.
+          // Show the main part of your app.
+          return const RideListScreen();
+        }
+
+        // State 4: We have no data, meaning the user is NOT logged in
+        else {
+          // If snapshot.data is null, no user is signed in.
+          // Show the welcome/login screen.
+          return const WelcomeScreen();
+        }
       },
     );
   }

@@ -9,7 +9,7 @@ class AppColors {
   static const Color backgroundGradientEnd = Color(0xFFDBEAFE);   // Tailwind blue-100
   static const Color textGray600 = Color(0xFF4B5563);
   static const Color textGray500 = Color(0xFF6B7280);
-
+  static const Color byuiGreen = Color(0xFF2D8F47);
   // --- NEW COLORS FOR LOGIN PAGE ---
 
   // Background for the login page body (bg-gray-50)

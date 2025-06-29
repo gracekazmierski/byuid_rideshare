@@ -20,7 +20,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isDriver = false;
   bool _isLoading = false;
-  bool _showPassword = false; // To toggle password visibility
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -29,13 +29,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     super.dispose();
   }
 
-  // --- Function to handle User Sign Up (Your existing logic) ---
   Future<void> _signUp() async {
-    if (_isLoading) return; // Prevent multiple submissions
+    if (_isLoading) return;
     if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       UserCredential userCredential = await FirebaseAuth.instance
@@ -48,15 +45,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       if (user != null) {
         UserProfile profile = UserProfile(
           uid: user.uid,
-          // This is the resolved section
-          firstName: user.email!.split('@')[0], // Use email prefix as first name
-          lastName: '', // Leave last name empty for now
+          firstName: user.email!.split('@')[0],
+          lastName: '',
           isDriver: _isDriver,
           phoneNumber: '',
         );
         await UserService.saveUserProfile(profile);
-
-        // Sign in the user immediately to establish the auth session
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -92,9 +86,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -102,97 +94,88 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50, // 'bg-gray-100'
+      backgroundColor: AppColors.gray50,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header Section
             Container(
               color: AppColors.byuiBlue,
               padding: const EdgeInsets.fromLTRB(16.0, 60.0, 16.0, 24.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 8),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                      const SizedBox(width: 8),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Create Account',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24.0,
-                                fontWeight: FontWeight.w600),
-                          ),
-                          Text(
-                            'Join BYUI Rideshare',
-                            style:
-                            TextStyle(color: AppColors.blue100, fontSize: 14.0),
-                          ),
-                        ],
-                      ),
+                      Text('Create Account', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                      Text('Join BYUI Rideshare', style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
                     ],
                   ),
-
                 ],
               ),
             ),
-            // Form Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-              child: Column(
-                children: [
-                  // Form Card
-                  Container(
-                    padding: const EdgeInsets.all(24.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(color: AppColors.gray200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10.0,
-                        ),
-                      ],
+              child: Container(
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: AppColors.gray200),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10.0)],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        hintText: "Email",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Email Input
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            hintText: "Email - Enter your email address",
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide:
-                                const BorderSide(color: AppColors.gray300)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: const BorderSide(
-                                    color: AppColors.inputFocusBlue, width: 2.0)),
-                          ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: !_showPassword,
+                      decoration: InputDecoration(
+                        hintText: "Password",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+                        suffixIcon: IconButton(
+                          icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: AppColors.textGray500),
+                          onPressed: () => setState(() => _showPassword = !_showPassword),
                         ),
-                        const SizedBox(height: 16.0),
-                        // Password Input
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_showPassword,
-                          decoration: InputDecoration(
-                            hintText: "Password - Enter your password",
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide:
-                                const BorderSide(color: AppColors.gray300)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: const BorderSide(
-                                    color: AppColors.inputFocusB
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    SizedBox(
+                      height: 48.0,
+                      child: ElevatedButton(
+                        onPressed: _signUp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.byuiBlue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                            : const Text('Create Account', style: TextStyle(fontWeight: FontWeight.w500)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
