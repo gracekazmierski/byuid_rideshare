@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Keep if you use FirebaseAuth directly in main, otherwise optional
-import 'package:byui_rideshare/firebase_options.dart';
+import 'package:byui_rideshare/services/firebase_options.dart';
 
 // --- Project-Specific Imports (for screens) ---
 import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // Handles auth redirection
