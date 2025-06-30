@@ -54,6 +54,21 @@ class _RideListScreenState extends State<RideListScreen> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration({required String labelText}) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: const TextStyle(color: AppColors.textGray500),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: AppColors.gray300)
+      ),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: AppColors.byuiBlue, width: 2.0)
+      ),
+    );
+  }
+
   void _showFilterSheet() {
     bool tempShowFull = _showFullRides;
     SortOption tempSort = _selectedSort;
@@ -63,23 +78,60 @@ class _RideListScreenState extends State<RideListScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter sheetSetState) {
+            Future<DateTime?> showThemedDatePicker({required DateTime initialDate, required DateTime firstDate}) async {
+              return await showDatePicker(
+                context: context,
+                initialDate: initialDate,
+                firstDate: firstDate,
+                lastDate: DateTime(2030),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.byuiBlue,
+                        onPrimary: Colors.white,
+                        onSurface: AppColors.textGray600,
+                      ),
+                      textButtonTheme: TextButtonThemeData(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.byuiBlue,
+                        ),
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+            }
+
             return Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.fromLTRB(24, 8, 24, MediaQuery.of(context).viewInsets.bottom + 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Filters & Sorting',
-                      style: Theme.of(context).textTheme.titleLarge),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const Text('Filters & Sorting', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
                   const SizedBox(height: 24),
                   CheckboxListTile(
-                    title: const Text('Show Full Rides'),
+                    title: const Text('Show Full Rides', style: TextStyle(color: AppColors.textGray600)),
                     value: tempShowFull,
                     onChanged: (val) {
                       sheetSetState(() => tempShowFull = val ?? true);
@@ -90,7 +142,7 @@ class _RideListScreenState extends State<RideListScreen> {
                   const Divider(),
                   DropdownButtonFormField<SortOption>(
                     value: tempSort,
-                    decoration: const InputDecoration(labelText: 'Sort By'),
+                    decoration: _inputDecoration(labelText: 'Sort By'),
                     items: const [
                       DropdownMenuItem(value: SortOption.soonest, child: Text("Soonest First")),
                       DropdownMenuItem(value: SortOption.latest, child: Text("Latest First")),
@@ -104,17 +156,18 @@ class _RideListScreenState extends State<RideListScreen> {
                   const SizedBox(height: 16),
                   const Divider(),
                   ListTile(
-                    leading: const Icon(Icons.date_range),
-                    title: const Text("Date Range"),
+                    leading: const Icon(Icons.date_range, color: AppColors.textGray500),
+                    title: const Text("Date Range", style: TextStyle(color: AppColors.textGray500)),
                     subtitle: Text(
                       (tempStartDate == null)
                           ? "Any date"
                           : "${DateFormat('MM/dd/yy').format(tempStartDate!)} - ${DateFormat('MM/dd/yy').format(tempEndDate ?? tempStartDate!)}",
+                      style: const TextStyle(color: AppColors.textGray600, fontWeight: FontWeight.bold),
                     ),
                     onTap: () async {
-                      final pickedStart = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2024), lastDate: DateTime(2030));
+                      final pickedStart = await showThemedDatePicker(initialDate: tempStartDate ?? DateTime.now(), firstDate: DateTime.now());
                       if (pickedStart != null) {
-                        final pickedEnd = await showDatePicker(context: context, initialDate: pickedStart, firstDate: pickedStart, lastDate: DateTime(2030));
+                        final pickedEnd = await showThemedDatePicker(initialDate: pickedStart, firstDate: pickedStart);
                         sheetSetState(() {
                           tempStartDate = pickedStart;
                           tempEndDate = pickedEnd;
@@ -123,7 +176,7 @@ class _RideListScreenState extends State<RideListScreen> {
                     },
                     trailing: (tempStartDate != null)
                         ? IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(Icons.clear, color: AppColors.textGray500),
                       onPressed: () => sheetSetState(() {
                         tempStartDate = null;
                         tempEndDate = null;
@@ -147,7 +200,7 @@ class _RideListScreenState extends State<RideListScreen> {
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.byuiBlue, foregroundColor: Colors.white),
-                      child: const Text('Apply Filters'),
+                      child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -159,6 +212,7 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
+  // --- WIDGET FOR APP BAR HEADER ---
   PreferredSizeWidget _buildAppBarHeader(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
     return PreferredSize(
@@ -186,16 +240,9 @@ class _RideListScreenState extends State<RideListScreen> {
                       tooltip: "Edit Profile",
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileEditScreen())),
                     ),
-                  IconButton(
-                    icon: const Icon(Icons.directions_car_filled_outlined, color: Colors.white, size: 28),
-                    tooltip: 'My Posted Rides',
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyRidesScreen())),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.event_seat, color: Colors.white, size: 28),
-                    tooltip: "My Joined Rides",
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyJoinedRidesScreen())),
-                  ),
+                  // --- ICONS REMOVED AS REQUESTED ---
+                  // IconButton for My Posted Rides - REMOVED
+                  // IconButton for My Joined Rides - REMOVED
                   IconButton(
                     icon: const Icon(Icons.logout, color: Colors.white, size: 28),
                     tooltip: 'Logout',
@@ -210,6 +257,7 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
+  // --- WIDGET FOR SEARCH SECTION ---
   Widget _buildSearchSection() {
     return Container(
       color: Colors.white,
@@ -278,13 +326,19 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
+  // --- WIDGET FOR RIDE CARD ---
   Widget _buildRideCard(BuildContext context, Ride ride) {
     final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
     return Card(
+      color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
+        // This new property completely disables the splash/ripple/tint effect
+        splashFactory: NoSplash.splashFactory,
+        // The highlightColor is also good to keep for some edge cases
+        highlightColor: Colors.transparent,
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RideDetailScreen(ride: ride))),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -374,6 +428,7 @@ class _RideListScreenState extends State<RideListScreen> {
     );
   }
 
+  // --- WIDGET FOR BOTTOM NAV BAR ---
   Widget _buildBottomNavBar() {
     return BottomAppBar(
       color: Colors.white,
@@ -391,7 +446,7 @@ class _RideListScreenState extends State<RideListScreen> {
                 children: [
                   FaIcon(FontAwesomeIcons.car, size: 20, color: AppColors.byuiBlue),
                   SizedBox(height: 4),
-                  Text('My Posted Rides', style: TextStyle(fontSize: 10, color: AppColors.byuiBlue)),
+                  Text('My Posted Rides', style: TextStyle(fontSize: 10, color: AppColors.textGray600)),
                 ],
               ),
             ),
