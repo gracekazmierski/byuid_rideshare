@@ -96,9 +96,8 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn(
-        clientId: _googleWebClientId,
-      ).signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(); // No clientId on mobile
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (!mounted) return;
       if (googleUser == null) {
@@ -110,8 +109,9 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
+        accessToken: googleAuth.accessToken ?? '',
         idToken: googleAuth.idToken,
       );
 
@@ -127,14 +127,12 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      print('Signed in with Google: ${userCredential.user?.email}');
+      print('Signed in with Google: ${user.email}');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Signed in with Google successfully!')),
       );
 
       bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-
-      if (!mounted) return;
 
       if (isNewUser) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -145,9 +143,6 @@ class _LoginPageState extends State<LoginPage> {
               (Route<dynamic> route) => false,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signed in with Google successfully!')),
-        );
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const AuthWrapper()),
               (Route<dynamic> route) => false,
