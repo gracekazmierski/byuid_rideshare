@@ -7,6 +7,7 @@ import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // For navigatio
 import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // To navigate to create account
 import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // For profile setup after sign-up
 import 'package:byui_rideshare/theme/app_colors.dart'; // Import custom colors
+import 'package:flutter/foundation.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -96,14 +97,16 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(); // No clientId on mobile
+      // Conditionally create GoogleSignIn with the clientId for web
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: kIsWeb ? _googleWebClientId : null,
+      );
+
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (!mounted) return;
       if (googleUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google Sign-In cancelled.')),
-        );
+        // User cancelled the sign-in
         setState(() => _isGoogleSigningIn = false);
         return;
       }
@@ -111,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken ?? '',
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
@@ -120,24 +123,14 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google Sign-In failed. No user found.')),
-        );
+        // Handle failed sign-in
         setState(() => _isGoogleSigningIn = false);
         return;
       }
 
-      print('Signed in with Google: ${user.email}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signed in with Google successfully!')),
-      );
-
+      // Your existing logic for new vs. existing user
       bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-
       if (isNewUser) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Welcome! Please complete your profile.')),
-        );
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
               (Route<dynamic> route) => false,
@@ -149,17 +142,11 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
 
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      print('Firebase Auth Google Error: ${e.message}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Sign-In failed: ${e.message}')),
-      );
     } catch (e) {
       if (!mounted) return;
       print('General Google Sign-In Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred during Google Sign-In: $e')),
+        SnackBar(content: Text('An error occurred during Google Sign-In.')),
       );
     } finally {
       if (mounted) {
