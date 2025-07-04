@@ -8,6 +8,10 @@ import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:intl/intl.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
+
+
 
 class MyJoinedRidesScreen extends StatelessWidget {
   const MyJoinedRidesScreen({super.key});
@@ -79,9 +83,95 @@ class MyJoinedRidesScreen extends StatelessWidget {
             itemCount: rides.length,
             itemBuilder: (context, index) {
               final ride = rides[index];
-              return _buildRideCard(context, ride);
-            },
-          );
+
+              return InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RideDetailScreen(ride: ride)),
+                ),
+                child: Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  color: Colors.white,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Origin
+                        Row(children: [
+                          Container(
+                            width: 8, height: 8,
+                            decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)),
+                            margin: const EdgeInsets.only(right: 8),
+                          ),
+                          Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
+                        ]),
+                        const SizedBox(height: 4),
+
+                        // Destination
+                        Row(children: [
+                          Container(
+                            width: 8, height: 8,
+                            decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
+                            margin: const EdgeInsets.only(right: 8),
+                          ),
+                          Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
+                        ]),
+                        const SizedBox(height: 12),
+
+                        // Date and Time
+                        Row(children: [
+                          const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
+                          const SizedBox(width: 8),
+                          Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()),
+                              style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
+                        ]),
+                        const SizedBox(height: 12),
+
+                        // Seats and buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(children: [
+                              const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
+                              const SizedBox(width: 8),
+                              Text('${ride.availableSeats} seat${ride.availableSeats != 1 ? 's' : ''} available',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
+                            ]),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.calendar_today),
+                                  tooltip: 'Add to Calendar',
+                                  onPressed: () => _addRideToCalendar(ride),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  tooltip: 'Edit Ride',
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => CreateRideScreen(existingRide: ride)),
+                                  ),
+                                ),
+                                if (ride.isFull || ride.availableSeats == 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
+                                    child: const Text('Full', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
         },
       ),
     );
@@ -90,6 +180,7 @@ class MyJoinedRidesScreen extends StatelessWidget {
   // --- Reusable Ride Card Widget ---
   Widget _buildRideCard(BuildContext context, Ride ride) {
     final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
+
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -117,68 +208,96 @@ class MyJoinedRidesScreen extends StatelessWidget {
                   Row(children: [
                     Container(
                       width: 8, height: 8,
-                      decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)),
+                      decoration: BoxDecoration(color: AppColors.byuiGreen,
+                          borderRadius: BorderRadius.circular(4)),
                       margin: const EdgeInsets.only(right: 8),
                     ),
-                    Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
+                    Text(ride.origin, style: const TextStyle(fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray700)),
                   ]),
                   const SizedBox(height: 4),
                   Row(children: [
                     Container(
                       width: 8, height: 8,
-                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
+                      decoration: BoxDecoration(color: AppColors.red500,
+                          borderRadius: BorderRadius.circular(4)),
                       margin: const EdgeInsets.only(right: 8),
                     ),
-                    Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
+                    Text(ride.destination, style: const TextStyle(fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray700)),
                   ]),
                 ],
               ),
               const SizedBox(height: 12),
               Row(children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
+                const Icon(Icons.calendar_today, size: 16,
+                    color: AppColors.textGray500),
                 const SizedBox(width: 8),
-                Text('${DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate())}', style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
+                Text('${DateFormat('MMM d hh:mm a').format(
+                    ride.rideDate.toDate())}', style: const TextStyle(
+                    fontSize: 14, color: AppColors.textGray500)),
               ]),
               const SizedBox(height: 12),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(children: [
-                    const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
+                    const Icon(
+                        Icons.group, size: 16, color: AppColors.byuiBlue),
                     const SizedBox(width: 8),
-                    Text('${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
+                    Text('${ride.availableSeats} seat${ride.availableSeats != 1
+                        ? "s"
+                        : ""} available', style: const TextStyle(fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.byuiBlue)),
                   ]),
                   FutureBuilder<String?>(
                     future: UserService.getUserName(ride.driverUid),
                     builder: (context, snapshot) {
                       final name = snapshot.data ?? "Loading...";
                       return Row(children: [
-                        const CircleAvatar(radius: 12, backgroundColor: Color(0xFFe6f1fa), child: Icon(Icons.person, size: 14, color: AppColors.byuiBlue)),
+                        const CircleAvatar(radius: 12, backgroundColor: Color(
+                            0xFFe6f1fa), child: Icon(
+                            Icons.person, size: 14, color: AppColors.byuiBlue)),
                         const SizedBox(width: 4),
-                        Text(name, style: const TextStyle(fontSize: 12, color: AppColors.textGray500)),
+                        Text(name, style: const TextStyle(
+                            fontSize: 12, color: AppColors.textGray500)),
                       ]);
                     },
                   ),
                 ],
               ),
-              if (isRideFull)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                      child: const Text('FULL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    tooltip: 'Add to Calendar',
+                    onPressed: () => _addRideToCalendar(ride),
                   ),
-                ),
+                  if (isRideFull)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.red500,
+                          borderRadius: BorderRadius.circular(4)),
+                      child: const Text('Full', style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12)),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 
   // --- Helpful Empty State Widget ---
   Widget _buildEmptyState(BuildContext context) {
@@ -224,4 +343,20 @@ class MyJoinedRidesScreen extends StatelessWidget {
       ),
     );
   }
+  void _addRideToCalendar(Ride ride) {
+    final DateTime rideStart = ride.rideDate.toDate();
+    final DateTime rideEnd = rideStart.add(Duration(hours: 1));
+
+    final Event event = Event(
+      title: 'Ride from ${ride.origin} to ${ride.destination}',
+      description: 'Ride Details: \$${ride.fare?.toStringAsFixed(2) ?? '0'} fare, ${ride.availableSeats} seats',
+      location: 'Departure: ${ride.origin}',
+      startDate: rideStart,
+      endDate: rideEnd,
+    );
+
+    Add2Calendar.addEvent2Cal(event);
+  }
+
 }
+

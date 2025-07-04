@@ -10,10 +10,13 @@ import 'package:byui_rideshare/screens/rides/ride_confirmation_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 
 class CreateRideScreen extends StatefulWidget {
-  const CreateRideScreen({super.key});
+  final Ride? existingRide;
+
+  const CreateRideScreen({super.key, this.existingRide});
 
   @override
   State<CreateRideScreen> createState() => _CreateRideScreenState();
+
 }
 
 class _CreateRideScreenState extends State<CreateRideScreen> {
@@ -35,8 +38,22 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   @override
   void initState() {
     super.initState();
+
     _fareFocusNode.addListener(_formatFareOnLostFocus);
+
+    if (widget.existingRide != null) {
+      final ride = widget.existingRide!;
+      _originController.text = ride.origin;
+      _destinationController.text = ride.destination;
+      _availableSeatsController.text = ride.availableSeats.toString();
+      _fareController.text = ride.fare?.toStringAsFixed(2) ?? '';
+      _selectedDate = ride.rideDate.toDate();
+      _selectedTime = TimeOfDay.fromDateTime(_selectedDate!);
+      _rideDateController.text = DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate!);
+      _timeController.text = _selectedTime!.format(context);
+    }
   }
+
 
   @override
   void dispose() {
