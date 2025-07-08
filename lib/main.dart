@@ -1,3 +1,4 @@
+import 'package:byui_rideshare/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Keep if you use FirebaseAuth directly in main, otherwise optional
@@ -14,10 +15,28 @@ import 'package:byui_rideshare/screens/auth/create_account_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Required for Firebase initialization
 
+  // try {
+  //   await Firebase.initializeApp(
+  //     options: DefaultFirebaseOptions.currentPlatform,
+  //   );
+
+  //   // Initialize push notifications
+  //   // await NotificationService.instance.initialize();
+
+  //   runApp(const MyApp());
+  // } catch (e, stack) {
+  //   // Log if something crashes
+  //   debugPrint('Firebase init failed: $e');
+  //   debugPrint('$stack');
+  // }
+
   // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize with Notification click
+  await NotificationService.instance.initialize();
 
   runApp(const MyApp());
 }
