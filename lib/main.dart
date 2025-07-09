@@ -1,3 +1,4 @@
+import 'package:byui_rideshare/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Keep if you use FirebaseAuth directly in main, otherwise optional
@@ -19,6 +20,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize with Notification click
+  await NotificationService.instance.initialize();
+
   runApp(const MyApp());
 }
 
@@ -36,6 +40,10 @@ class MyApp extends StatelessWidget {
 
       // The home property points to AuthWrapper, which decides the initial screen
       home: const AuthWrapper(),
+      // home: Scaffold(
+      //   appBar: AppBar(title: Text('It works!')),
+      //   body: Center(child: Text('Firebase Connected')),
+      // ),
 
       // Define named routes for navigation within your app
       routes: {

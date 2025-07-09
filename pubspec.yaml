@@ -15,9 +15,15 @@ dependencies:
   flutter_svg: ^2.0.11
 
   cupertino_icons: ^1.0.8
-  firebase_core: ^3.14.0 # Required for all Firebase products
-  firebase_auth: ^5.6.0 # For email/password and other auth methods
-  cloud_firestore: ^5.6.9 # For the Firestore database
+  firebase_core: ^3.15.0
+  firebase_auth: ^5.6.0
+  firebase_messaging: ^15.1.0
+  flutter_local_notifications:
+    git:
+      url: https://github.com/MaikuB/flutter_local_notifications.git
+      ref: master
+      path: flutter_local_notifications
+  cloud_firestore: ^5.6.9
   intl: ^0.20.2
   google_sign_in: ^6.1.5
   mask_text_input_formatter: ^2.3.0 # For making the phone number appear with dashes
