@@ -15,21 +15,6 @@ import 'package:byui_rideshare/screens/auth/create_account_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Required for Firebase initialization
 
-  // try {
-  //   await Firebase.initializeApp(
-  //     options: DefaultFirebaseOptions.currentPlatform,
-  //   );
-
-  //   // Initialize push notifications
-  //   // await NotificationService.instance.initialize();
-
-  //   runApp(const MyApp());
-  // } catch (e, stack) {
-  //   // Log if something crashes
-  //   debugPrint('Firebase init failed: $e');
-  //   debugPrint('$stack');
-  // }
-
   // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -55,6 +40,10 @@ class MyApp extends StatelessWidget {
 
       // The home property points to AuthWrapper, which decides the initial screen
       home: const AuthWrapper(),
+      // home: Scaffold(
+      //   appBar: AppBar(title: Text('It works!')),
+      //   body: Center(child: Text('Firebase Connected')),
+      // ),
 
       // Define named routes for navigation within your app
       routes: {
