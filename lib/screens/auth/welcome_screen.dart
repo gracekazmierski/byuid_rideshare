@@ -42,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome to BYUI Rideshare',
+                  'Welcome to RexRide',
                   style: TextStyle(
                     color: Colors.white, // 'text-white'
                     fontSize: 24.0, // 'text-2xl'
