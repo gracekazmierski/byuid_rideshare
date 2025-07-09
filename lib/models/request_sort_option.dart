@@ -1,0 +1,1 @@
+enum RequestSortOption { newest, oldest }
