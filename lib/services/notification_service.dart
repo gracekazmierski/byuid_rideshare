@@ -18,7 +18,6 @@ class NotificationService {
   bool _isFlutterLocalNotificationsInitialized = false;
 
   Future<void> initialize() async {
-    
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Request permission
@@ -27,9 +26,18 @@ class NotificationService {
     // Setup message handlers
     await _setupMessageHandlers();
 
-    // get FCM token
-    final token = await _messaging.getToken();
-    print('FCM token: $token');
+    // Safely get the FCM token after checking APNs token availability
+    try {
+      final apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken == null) {
+        print('APNs token not yet available — skipping getToken for now');
+      } else {
+        final token = await _messaging.getToken();
+        print('FCM token: $token');
+      }
+    } catch (e) {
+      print('🔥 Error while retrieving FCM token: $e');
+    }
   }
 
   Future<void> _requestPermission() async {
