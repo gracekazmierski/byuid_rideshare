@@ -40,6 +40,10 @@ class AppColors {
   // Google button text (text-gray-700) - already have gray700
   // Google button hover background (hover:bg-gray-50) - already have gray50
 
+  static const Color requestAccent = Color(0xFF00838F);
+
+  static const Color textGray800 = Color(0xFF1F2937);
+
   // Sign In button hover background (hover:bg-[#005a9a])
   static const Color byuiBlueHover = Color(0xFF005A9A); // A slightly darker shade of byuiBlue
 }

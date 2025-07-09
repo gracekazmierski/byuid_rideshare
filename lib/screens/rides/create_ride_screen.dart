@@ -3,14 +3,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/ride.dart';
+import 'package:byui_rideshare/models/user_profile.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/screens/rides/ride_confirmation_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
+import 'package:byui_rideshare/utils/time_input_formatter.dart';
+import 'package:flutter/services.dart';
+
+enum AmPm { am, pm }
 
 class CreateRideScreen extends StatefulWidget {
-  const CreateRideScreen({super.key});
+  final String? initialOrigin;
+  final String? initialDestination;
+
+  const CreateRideScreen({
+    super.key,
+    this.initialOrigin,
+    this.initialDestination,
+  });
 
   @override
   State<CreateRideScreen> createState() => _CreateRideScreenState();
@@ -29,13 +41,20 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   final FocusNode _fareFocusNode = FocusNode();
 
   DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
   bool _isLoading = false;
+  AmPm? _selectedAmPm;
 
   @override
   void initState() {
     super.initState();
     _fareFocusNode.addListener(_formatFareOnLostFocus);
+
+    if (widget.initialOrigin != null) {
+      _originController.text = widget.initialOrigin!;
+    }
+    if (widget.initialDestination != null) {
+      _destinationController.text = widget.initialDestination!;
+    }
   }
 
   @override
@@ -65,59 +84,91 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     }
   }
 
-  void _postRide() async {
-    if (_formkey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+  TimeOfDay? _parseTimeWithAmPm(String timeStr, AmPm? amPm) {
+    if (amPm == null) return null;
 
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
-        setState(() => _isLoading = false);
-        return;
-      }
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length != 2) return null;
 
-      final userProfile = await UserService.fetchUserProfile(user.uid);
-      if (userProfile == null || !mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not retrieve user profile.')));
-        setState(() => _isLoading = false);
-        return;
-      }
+      int hour = int.parse(parts[0]);
+      final int minute = int.parse(parts[1]);
 
-      if (_selectedDate == null || _selectedTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select both date and time.')));
-        setState(() => _isLoading = false);
-        return;
-      }
+      if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return null;
 
-      DateTime finalRideDateTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
-      final int? availableSeats = int.tryParse(_availableSeatsController.text);
-      final double? fare = double.tryParse(_fareController.text);
-
-      final ride = Ride(
-        id: '',
-        origin: _originController.text.trim(),
-        destination: _destinationController.text.trim(),
-        availableSeats: availableSeats!,
-        fare: fare,
-        driverUid: user.uid,
-        driverName: '${userProfile.firstName} ${userProfile.lastName}',
-        rideDate: Timestamp.fromDate(finalRideDateTime),
-        postCreationTime: Timestamp.now(),
-        isFull: false,
-        joinedUserUids: [],
-      );
-
-      try {
-        await RideService.saveRideListing(ride);
-        if (!mounted) return;
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post ride: $e')));
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
+      if (amPm == AmPm.am) {
+        if (hour == 12) {
+          hour = 0;
         }
+      } else {
+        if (hour != 12) {
+          hour += 12;
+        }
+      }
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  void _postRide() async {
+    if (!_formkey.currentState!.validate()) {
+      setState(() {});
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final UserProfile? userProfile = await UserService.fetchUserProfile(user.uid);
+    if (userProfile == null || !mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not retrieve user profile.')));
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final TimeOfDay? rideTime = _parseTimeWithAmPm(_timeController.text, _selectedAmPm);
+
+    if (_selectedDate == null || rideTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a valid date and time.')));
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    DateTime finalRideDateTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, rideTime.hour, rideTime.minute);
+    final int? availableSeats = int.tryParse(_availableSeatsController.text);
+    final double? fare = double.tryParse(_fareController.text);
+
+    final ride = Ride(
+      id: '',
+      origin: _originController.text.trim(),
+      destination: _destinationController.text.trim(),
+      availableSeats: availableSeats!,
+      fare: fare,
+      driverUid: user.uid,
+      driverName: '${userProfile.firstName} ${userProfile.lastName}',
+      rideDate: Timestamp.fromDate(finalRideDateTime),
+      postCreationTime: Timestamp.now(),
+      isFull: false,
+      joinedUserUids: [],
+    );
+
+    try {
+      await RideService.saveRideListing(ride);
+      if (!mounted) return;
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post ride: $e')));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -125,13 +176,15 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   InputDecoration _inputDecoration({required String labelText, Widget? suffixIcon}) {
     return InputDecoration(
       labelText: labelText,
+      // The label text is blue
+      labelStyle: const TextStyle(color: AppColors.textGray600),
+      floatingLabelStyle: const TextStyle(color: AppColors.byuiBlue),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
     );
   }
 
-  // --- NEW: AppBar Widget ---
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 40),
@@ -165,11 +218,12 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- CHANGE 1: Define gray text style for user input ---
+    const grayInputTextStyle = TextStyle(color: AppColors.textGray600);
+
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      // --- CHANGE: Using the new AppBar method ---
       appBar: _buildAppBar(context),
-      // --- CHANGE: The body is now just the Form ---
       body: Form(
         key: _formkey,
         child: ListView(
@@ -180,12 +234,14 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
               children: [
                 TextFormField(
                   controller: _originController,
+                  style: grayInputTextStyle, // Use gray for typed text
                   decoration: _inputDecoration(labelText: 'Origin (e.g., Rexburg, ID)'),
                   validator: (v) => v!.isEmpty ? 'Please enter an origin' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _destinationController,
+                  style: grayInputTextStyle, // Use gray for typed text
                   decoration: _inputDecoration(labelText: 'Destination (e.g., Salt Lake City, UT)'),
                   validator: (v) => v!.isEmpty ? 'Please enter a destination' : null,
                 ),
@@ -197,6 +253,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
               children: [
                 TextFormField(
                   controller: _availableSeatsController,
+                  style: grayInputTextStyle, // Use gray for typed text
                   decoration: _inputDecoration(labelText: 'Available Seats'),
                   keyboardType: TextInputType.number,
                   validator: (v) => (v == null || v.isEmpty || int.tryParse(v) == null) ? 'Enter a valid number' : null,
@@ -204,6 +261,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _fareController,
+                  style: grayInputTextStyle, // Use gray for typed text
                   focusNode: _fareFocusNode,
                   decoration: _inputDecoration(labelText: 'Fare per person (\$)'),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -217,10 +275,11 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
               children: [
                 TextFormField(
                   controller: _rideDateController,
+                  style: const TextStyle(color: AppColors.textGray600),
                   decoration: _inputDecoration(
                     labelText: 'Date',
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
+                      icon: const Icon(Icons.calendar_today, color: AppColors.byuiBlue),
                       onPressed: () async {
                         DateTime? picked = await showDatePicker(context: context, initialDate: _selectedDate ?? DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2101));
                         if (picked != null) {
@@ -238,23 +297,54 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _timeController,
-                  decoration: _inputDecoration(
-                    labelText: 'Time',
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.access_time),
-                      onPressed: () async {
-                        TimeOfDay? picked = await showTimePicker(context: context, initialTime: _selectedTime ?? TimeOfDay.now());
-                        if (picked != null) {
-                          setState(() {
-                            _selectedTime = picked;
-                            _timeController.text = picked.format(context);
-                          });
-                        }
-                      },
+                  style: const TextStyle(color: AppColors.textGray600),
+                  decoration: _inputDecoration(labelText: 'Time (e.g., 2:40)'),
+                  keyboardType: TextInputType.datetime,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(5),
+                    TimeInputFormatter(),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Please enter a time';
+                    final parts = v.split(':');
+                    if (parts.length != 2) return 'Use HH:MM format';
+                    try {
+                      final int hour = int.parse(parts[0]);
+                      final int minute = int.parse(parts[1]);
+                      if (hour < 1 || hour > 12) return 'Hour must be 1-12';
+                      if (minute < 0 || minute > 59) return 'Minute must be 0-59';
+                    } catch (e) {
+                      return 'Invalid numbers';
+                    }
+                    if (_selectedAmPm == null) return 'Please select AM or PM';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<AmPm>(
+                    segments: const <ButtonSegment<AmPm>>[
+                      ButtonSegment<AmPm>(value: AmPm.am, label: Text('AM')),
+                      ButtonSegment<AmPm>(value: AmPm.pm, label: Text('PM')),
+                    ],
+                    selected: <AmPm>{if (_selectedAmPm != null) _selectedAmPm!},
+                    onSelectionChanged: (Set<AmPm> newSelection) {
+                      setState(() {
+                        _selectedAmPm = newSelection.isEmpty ? null : newSelection.first;
+                      });
+                    },
+                    emptySelectionAllowed: true,
+                    showSelectedIcon: false,
+                    style: SegmentedButton.styleFrom(
+                      // --- UPDATED per your request ---
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.byuiBlue,
+                      selectedBackgroundColor: AppColors.byuiBlue,
+                      selectedForegroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(40),
                     ),
                   ),
-                  readOnly: true,
-                  validator: (v) => v!.isEmpty ? 'Please select a time' : null,
                 ),
               ],
             ),
@@ -290,7 +380,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.byuiBlue)),
           const SizedBox(height: 20),
           ...children,
         ],
