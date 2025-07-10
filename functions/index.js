@@ -1,8 +1,17 @@
-// functions/index.js (or index.ts)
+// functions/index.js
 
 // --- CHANGE 1: Import onSchedule from v2 scheduler ---
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require('firebase-admin');
+
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+
+// // Initialize Admin SDK
+// initializeApp();
+// const db = getFirestore();
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
@@ -54,3 +63,50 @@ exports.deleteOldRides = onSchedule({
       throw error; // --- CHANGE 3: Simpler error rethrow for v2 ---
     }
 });
+
+
+// Firestore Trigger: Notify driver when new ride request is created
+exports.notifyDriverOnRideRequest = onDocumentCreated(
+  "ride_requests/{requestId}",
+  async (event) => {
+    const request = event.data?.data();
+
+    if (!request) {
+      console.error("Missing request data");
+      return;
+    }
+
+    const { driverUid, riderUid, rideId, message = "", riderName = "A rider" } = request;
+
+    const driverDoc = await db.collection("users").doc(driverUid).get();
+    const fcmToken = driverDoc.data()?.fcmToken;
+
+    if (!fcmToken) {
+      console.warn(`No FCM token for driver UID: ${driverUid}`);
+      return;
+    }
+
+    const payload = {
+      notification: {
+        title: "New Ride Request",
+        body: `${riderName} has requested to join your ride.`,
+      },
+      data: {
+        rideId,
+        riderUid,
+        type: "ride_request",
+      },
+    };
+    
+    try {
+      await admin.messaging().send({
+        token: fcmToken,
+        ...payload,
+      });
+      console.log(`Notification sent to driver ${driverUid}`);
+    } catch (error) {
+      console.error(`Error sending notification to driver ${driverUid}:`, error);
+    }
+    console.log(`Notification sent to driver ${driverUid}`);
+  }
+);
