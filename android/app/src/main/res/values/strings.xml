@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Your App's Name (optional, but good practice) -->
+    <string name="app_name">RexRide</string>
+
+    <!-- Facebook SDK Required Strings -->
+    <string name="facebook_app_id">756619760227548</string>
+    <string name="fb_login_protocol_scheme">fb756619760227548</string>
+    <string name="facebook_client_token">086e8e92d4d3d4143b99bc4e83b89876</string>
+
+    <!-- You can add other string resources your app might need here -->
+</resources>

@@ -34,28 +34,11 @@
 
   <!-- IMPORTANT: Firebase SDK and Configuration for Web -->
   <!-- Load Firebase SDKs -->
-  <!-- Use a specific major version (e.g., 9) and let Firebase handle minor updates, or specify exact minor versions -->
-  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics-compat.js"></script>
-  <!-- Also include other Firebase SDKs you use in your app, like Auth and Firestore -->
-  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
-  <!-- IMPORTANT: Replace '9.x.x' with the actual major version you intend to use or that Firebase Console suggests.
-       You often don't need the 'compat' version if using modular SDK, but it's safer for FlutterFire to use them
-       if that's what your setup expects. Firebase Console usually suggests the modular imports.
-       If your console showed:
-       import { initializeApp } from "firebase/app";
-       import { getAnalytics } from "firebase/analytics";
-       Then you might need the non-compat versions:
-       <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
-       <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics.js"></script>
-       But for compatibility with FlutterFire, stick with what typically works, which is often `compat`.
-       If issues persist, try swapping `compat.js` for `.js` for all your Firebase scripts.
-  -->
-
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <script>
-    // Your web app's Firebase configuration
-    // This is copied directly from your Firebase Console
     var firebaseConfig = {
       apiKey: "AIzaSyBjx-4rPklg6MgDjKEfyRXmWMjzUhRanHc",
       authDomain: "byuirideshare.firebaseapp.com",
@@ -65,15 +48,36 @@
       appId: "1:527415309529:web:7ecf2a44100fefdd34bac8",
       measurementId: "G-HNGZLVJRVS"
     };
-
-    // DO NOT add firebase.initializeApp(firebaseConfig); here.
-    // The FlutterFire plugins (in your Dart code) handle this initialization automatically
-    // when you call Firebase.initializeApp() in main.dart.
+    // FlutterFire handles Firebase.initializeApp()
   </script>
   <!-- END Firebase SDK and Configuration for Web -->
 
 </head>
 <body>
+
+<!-- START: Facebook SDK for JavaScript -->
+<div id="fb-root"></div> <!-- Optional but recommended -->
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '756619760227548',
+      cookie     : true,
+      xfbml      : true,
+      version    : 'v19.0' // Use a current API version
+    });
+    // FB.AppEvents.logPageView(); // Optional
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
+<!-- END: Facebook SDK for JavaScript -->
+
 <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

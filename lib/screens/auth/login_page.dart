@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart'; // For Google Sign-In
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // For navigation after login
 import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // To navigate to create account
 import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // For profile setup after sign-up
@@ -24,9 +25,12 @@ class _LoginPageState extends State<LoginPage> {
   // State variables for loading indicators
   bool _isGoogleSigningIn = false;
   bool _isEmailSigningIn = false;
+  bool _isFacebookSigningIn = false;
 
   // IMPORTANT: Replace this with your actual Google Web Client ID
   final String _googleWebClientId = '527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com'; // <--- PASTE THE CORRECT WEB CLIENT ID HERE
+
+  final firebaseAuth = FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -172,6 +176,109 @@ class _LoginPageState extends State<LoginPage> {
           _isGoogleSigningIn = false;
         });
       }
+    }
+  }
+
+  // --- Function to handle Facebook Sign In ---
+  Future<void> _handleFacebookSignIn() async {
+    if (!mounted) return;
+    setState(() {
+      _isFacebookSigningIn = true;
+    });
+
+    try {
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'], // Request permissions
+      );
+
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        print('Facebook Access Token: ${accessToken.tokenString}');
+
+        // Create a Firebase credential with the Facebook access token
+        final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+
+        // Sign-in to Firebase with the credential
+        final UserCredential userCredential = await firebaseAuth.signInWithCredential(credential);
+        User? user = userCredential.user;
+
+        if (!mounted) return;
+        if (user == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Facebook Sign-In failed. No user found with Firebase.')),
+          );
+          if (mounted) setState(() => _isFacebookSigningIn = false);
+          return;
+        }
+
+        print('Signed in with Facebook: ${userCredential.user?.email}');
+        _handleSuccessfulSignIn(userCredential); // Use a common handler
+
+      } else if (result.status == LoginStatus.cancelled) {
+        print('Facebook login cancelled by user.');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Facebook Sign-In cancelled.')),
+        );
+      } else {
+        print('Facebook login failed: ${result.message}');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Facebook Sign-In failed: ${result.message}')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      print('Firebase Auth Facebook Error: ${e.message}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Facebook Sign-In failed: ${e.message}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      print('General Facebook Sign-In Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred during Facebook Sign-In: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFacebookSigningIn = false;
+        });
+      }
+    }
+  }
+
+  // <--- COMMON SUCCESS HANDLER --->
+  void _handleSuccessfulSignIn(UserCredential userCredential) {
+    if (!mounted) return;
+
+    final providerId = userCredential.credential?.providerId ?? "email"; // Get provider
+    String successMessage = 'Signed in successfully!';
+    if (providerId.contains("google")) {
+      successMessage = 'Signed in with Google successfully!';
+    } else if (providerId.contains("facebook")) {
+      successMessage = 'Signed in with Facebook successfully!';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(successMessage)),
+    );
+
+    bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+    if (isNewUser) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Welcome! Please complete your profile.')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+            (Route<dynamic> route) => false,
+      );
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            (Route<dynamic> route) => false,
+      );
     }
   }
 
@@ -399,6 +506,31 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 16.0), // space-y-4
+
+                          // <--- 5. ADD FACEBOOK SIGN-IN BUTTON --->
+                          _isFacebookSigningIn
+                              ? const Center(child: CircularProgressIndicator())
+                              : SizedBox(
+                            width: double.infinity,
+                            height: 48.0,
+                            child: ElevatedButton.icon( // Using ElevatedButton.icon for consistency or OutlinedButton
+                              icon: const Icon(Icons.facebook, color: Colors.white), // Facebook icon
+                              label: const Text('Sign In with Facebook'),
+                              onPressed: _handleFacebookSignIn,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1877F2), // Facebook blue
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16.0),
 
                           // Create Account Button (text-center Button variant="link" className="text-[#006eb6] hover:text-[#005a9a] font-medium")
                           Center(
