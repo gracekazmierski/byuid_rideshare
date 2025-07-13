@@ -186,7 +186,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     try {
       await RideService.saveRideListing(ride);
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride, isEditing: _isEditing)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save ride: $e')));
