@@ -1,4 +1,6 @@
 import 'package:byui_rideshare/services/notification_service.dart';
+import 'package:byui_rideshare/services/user_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Keep if you use FirebaseAuth directly in main, otherwise optional
@@ -10,7 +12,6 @@ import 'package:byui_rideshare/screens/auth/login_page.dart'; // Your actual ema
 import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Screen for logged-in users
 import 'package:byui_rideshare/screens/auth/create_account_page.dart';
 
-
 // Ensure Firebase is initialized before running the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Required for Firebase initialization
@@ -19,6 +20,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await FirebaseMessaging.instance.requestPermission();
+  UserService.listenForTokenRefresh();
 
   // Initialize with Notification click
   await NotificationService.instance.initialize();
