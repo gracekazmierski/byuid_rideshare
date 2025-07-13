@@ -15,11 +15,13 @@ import 'package:flutter/services.dart';
 enum AmPm { am, pm }
 
 class CreateRideScreen extends StatefulWidget {
+  final Ride? existingRide;
   final String? initialOrigin;
   final String? initialDestination;
 
   const CreateRideScreen({
     super.key,
+    this.existingRide,
     this.initialOrigin,
     this.initialDestination,
   });
@@ -43,17 +45,39 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   DateTime? _selectedDate;
   bool _isLoading = false;
   AmPm? _selectedAmPm;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _fareFocusNode.addListener(_formatFareOnLostFocus);
 
-    if (widget.initialOrigin != null) {
-      _originController.text = widget.initialOrigin!;
-    }
-    if (widget.initialDestination != null) {
-      _destinationController.text = widget.initialDestination!;
+    _isEditing = widget.existingRide != null;
+
+    // If editing, populate all fields from the existing ride data.
+    if (_isEditing) {
+      final ride = widget.existingRide!;
+      _originController.text = ride.origin;
+      _destinationController.text = ride.destination;
+      _availableSeatsController.text = ride.availableSeats.toString();
+      _fareController.text = ride.fare?.toStringAsFixed(2) ?? '';
+
+      final rideDateTime = ride.rideDate.toDate();
+      _selectedDate = rideDateTime;
+      _rideDateController.text = DateFormat('EEEE, MMMM d, yyyy').format(rideDateTime);
+      _timeController.text = DateFormat('h:mm').format(rideDateTime);
+      
+      final timeOfDay = TimeOfDay.fromDateTime(rideDateTime);
+      _selectedAmPm = (timeOfDay.period == DayPeriod.am) ? AmPm.am : AmPm.pm;
+    
+    // Otherwise, for a new ride, check for initial origin/destination values.
+    } else {
+      if (widget.initialOrigin != null) {
+        _originController.text = widget.initialOrigin!;
+      }
+      if (widget.initialDestination != null) {
+        _destinationController.text = widget.initialDestination!;
+      }
     }
   }
 
@@ -98,11 +122,11 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
       if (amPm == AmPm.am) {
         if (hour == 12) {
-          hour = 0;
+          hour = 0; // Midnight case
         }
-      } else {
+      } else { // PM
         if (hour != 12) {
-          hour += 12;
+          hour += 12; // Afternoon/evening case
         }
       }
       return TimeOfDay(hour: hour, minute: minute);
@@ -146,7 +170,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     final double? fare = double.tryParse(_fareController.text);
 
     final ride = Ride(
-      id: '',
+      id: widget.existingRide?.id ?? '',
       origin: _originController.text.trim(),
       destination: _destinationController.text.trim(),
       availableSeats: availableSeats!,
@@ -154,18 +178,18 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
       driverUid: user.uid,
       driverName: '${userProfile.firstName} ${userProfile.lastName}',
       rideDate: Timestamp.fromDate(finalRideDateTime),
-      postCreationTime: Timestamp.now(),
-      isFull: false,
-      joinedUserUids: [],
+      postCreationTime: widget.existingRide?.postCreationTime ?? Timestamp.now(),
+      isFull: widget.existingRide?.isFull ?? false,
+      joinedUserUids: widget.existingRide?.joinedUserUids ?? [],
     );
 
     try {
       await RideService.saveRideListing(ride);
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride, isEditing: _isEditing)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post ride: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save ride: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -199,13 +223,13 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 8),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Offer a Ride', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
-                  SizedBox(height: 2.0),
-                  Text("Fill out the details below", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(_isEditing ? 'Edit Your Ride' : 'Offer a Ride', style: const TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2.0),
+                  Text(_isEditing ? "Update the details below" : "Fill out the details below", style: const TextStyle(color: AppColors.blue100, fontSize: 14.0)),
                 ],
               ),
             ],
@@ -284,7 +308,6 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                           initialDate: _selectedDate ?? DateTime.now(),
                           firstDate: DateTime.now(),
                           lastDate: DateTime(2101),
-                          // --- CHANGE: Added builder to theme the calendar ---
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
@@ -302,7 +325,6 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                               child: child!,
                             );
                           },
-                          // --- END CHANGE ---
                         );
                         if (picked != null) {
                           setState(() {
@@ -364,6 +386,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                       selectedBackgroundColor: AppColors.byuiBlue,
                       selectedForegroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(40),
+                      side: const BorderSide(color: AppColors.gray300)
                     ),
                   ),
                 ),
@@ -381,7 +404,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 ),
                 child: _isLoading
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                    : const Text('Post Ride', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                    : Text(_isEditing ? 'Update Ride' : 'Post Ride', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
               ),
             ),
           ],

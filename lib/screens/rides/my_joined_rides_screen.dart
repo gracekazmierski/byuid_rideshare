@@ -9,6 +9,8 @@ import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:intl/intl.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
 
 class MyJoinedRidesScreen extends StatelessWidget {
   const MyJoinedRidesScreen({super.key});
@@ -137,15 +139,14 @@ class MyJoinedRidesScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // ✨ CHANGED to ElevatedButton.icon
                         ElevatedButton.icon(
-                          icon: const Icon(Icons.search),
-                          label: const Text('Search ride requests'),
+                          icon: const Icon(Icons.add_road),
+                          label: const Text('Find a Ride Request'),
                           style: buttonStyle,
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const RideListScreen()),
+                              MaterialPageRoute(builder: (context) => const RideListScreen()), // Note: May need a dedicated request list screen
                             );
                           },
                         ),
@@ -162,8 +163,10 @@ class MyJoinedRidesScreen extends StatelessWidget {
     );
   }
 
-  // This card for confirmed rides remains the same.
+  // This card for confirmed rides includes details from both branches.
   Widget _buildRideCard(BuildContext context, Ride ride) {
+    final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
+
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -191,11 +194,64 @@ class MyJoinedRidesScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()), style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
               ]),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
+                    const SizedBox(width: 8),
+                    Text('${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
+                  ]),
+                  FutureBuilder<String?>(
+                    future: UserService.getUserName(ride.driverUid),
+                    builder: (context, snapshot) {
+                      final name = snapshot.data ?? "Loading...";
+                      return Row(children: [
+                        const CircleAvatar(radius: 12, backgroundColor: Color(0xFFe6f1fa), child: Icon(Icons.person, size: 14, color: AppColors.byuiBlue)),
+                        const SizedBox(width: 4),
+                        Text(name, style: const TextStyle(fontSize: 12, color: AppColors.textGray500)),
+                      ]);
+                    },
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    tooltip: 'Add to Calendar',
+                    onPressed: () => _addRideToCalendar(ride),
+                  ),
+                  if (isRideFull)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
+                      child: const Text('Full', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _addRideToCalendar(Ride ride) {
+    final DateTime rideStart = ride.rideDate.toDate();
+    final DateTime rideEnd = rideStart.add(const Duration(hours: 1)); // Assuming a 1-hour duration for the calendar event
+
+    final Event event = Event(
+      title: 'Ride from ${ride.origin} to ${ride.destination}',
+      description: 'Ride with ${ride.driverName}. Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}.',
+      location: 'Departure: ${ride.origin}',
+      startDate: rideStart,
+      endDate: rideEnd,
+    );
+
+    Add2Calendar.addEvent2Cal(event);
   }
 }
 
@@ -228,17 +284,21 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         '${widget.request.fromLocation} to ${widget.request.toLocation}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
-                    ),
-                    const SizedBox(height: 4),
-                    Text(dateString, style: const TextStyle(color: AppColors.textGray500)),
-                  ],
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(dateString, style: const TextStyle(color: AppColors.textGray500)),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -257,33 +317,33 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
                   future: UserService.getUserName(widget.request.requesterUid),
                   builder: (context, snapshot) {
                     return Text(
-                        'Requested by ${snapshot.data ?? "..."}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textGray600)
+                      'Requested by ${snapshot.data ?? "..."}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textGray600)
                     );
                   },
                 ),
                 // The Leave Request button
                 _isLeaving
-                    ? const CircularProgressIndicator()
-                    : TextButton(
-                  onPressed: () async {
-                    setState(() => _isLeaving = true);
-                    try {
-                      await PostedRequestService.leaveRideRequest(widget.request.id);
-                      if(mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("You left the ride request."), backgroundColor: Colors.green));
-                      }
-                    } catch (e) {
-                      if(mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to leave: $e"), backgroundColor: Colors.red));
-                      }
-                    } finally {
-                      if(mounted) setState(() => _isLeaving = false);
-                    }
-                  },
-                  style: TextButton.styleFrom(foregroundColor: AppColors.red500),
-                  child: const Text('Leave'),
-                ),
+                  ? const CircularProgressIndicator()
+                  : TextButton(
+                      onPressed: () async {
+                        setState(() => _isLeaving = true);
+                        try {
+                          await PostedRequestService.leaveRideRequest(widget.request.id);
+                          if(mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("You left the ride request."), backgroundColor: Colors.green));
+                          }
+                        } catch (e) {
+                          if(mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to leave: $e"), backgroundColor: Colors.red));
+                          }
+                        } finally {
+                          if(mounted) setState(() => _isLeaving = false);
+                        }
+                      },
+                      style: TextButton.styleFrom(foregroundColor: AppColors.red500),
+                      child: const Text('Leave'),
+                    ),
               ],
             )
           ],
