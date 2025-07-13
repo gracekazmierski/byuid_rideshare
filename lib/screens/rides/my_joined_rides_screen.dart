@@ -9,6 +9,10 @@ import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:intl/intl.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
+
+
 
 class MyJoinedRidesScreen extends StatelessWidget {
   const MyJoinedRidesScreen({super.key});
@@ -162,7 +166,6 @@ class MyJoinedRidesScreen extends StatelessWidget {
     );
   }
 
-  // This card for confirmed rides remains the same.
   Widget _buildRideCard(BuildContext context, Ride ride) {
     return Card(
       color: Colors.white,
@@ -187,7 +190,8 @@ class MyJoinedRidesScreen extends StatelessWidget {
               ]),
               const SizedBox(height: 12),
               Row(children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
+                const Icon(Icons.calendar_today, size: 16,
+                    color: AppColors.textGray500),
                 const SizedBox(width: 8),
                 Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()), style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
               ]),
@@ -291,4 +295,21 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
       ),
     );
   }
+}
+
+// Note: The 'main' branch had a dependency on this method, but the 'GraceK' version of the UI doesn't call it.
+// It is kept here as part of the 'GraceK' branch's code.
+void _addRideToCalendar(Ride ride) {
+  final DateTime rideStart = ride.rideDate.toDate();
+  final DateTime rideEnd = rideStart.add(const Duration(hours: 1));
+
+  final Event event = Event(
+    title: 'Ride from ${ride.origin} to ${ride.destination}',
+    description: 'Ride Details: \$${ride.fare?.toStringAsFixed(2) ?? '0'} fare, ${ride.availableSeats} seats',
+    location: 'Departure: ${ride.origin}',
+    startDate: rideStart,
+    endDate: rideEnd,
+  );
+
+  Add2Calendar.addEvent2Cal(event);
 }

@@ -2,9 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:byui_rideshare/models/notification_item.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Prevent [core/duplicate-app] error
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
+
   await NotificationService.instance.setupFlutterNotifications();
   await NotificationService.instance.showNotification(message);
 }
@@ -18,7 +24,6 @@ class NotificationService {
   bool _isFlutterLocalNotificationsInitialized = false;
 
   Future<void> initialize() async {
-    
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Request permission
@@ -27,9 +32,18 @@ class NotificationService {
     // Setup message handlers
     await _setupMessageHandlers();
 
-    // get FCM token
-    final token = await _messaging.getToken();
-    print('FCM token: $token');
+    // Safely get the FCM token after checking APNs token availability
+    try {
+      final apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken == null) {
+        print('APNs token not yet available — skipping getToken for now');
+      } else {
+        final token = await _messaging.getToken();
+        print('FCM token: $token');
+      }
+    } catch (e) {
+      print('🔥 Error while retrieving FCM token: $e');
+    }
   }
 
   Future<void> _requestPermission() async {

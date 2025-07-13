@@ -7,6 +7,7 @@ import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
 
 class RideDetailScreen extends StatefulWidget {
   final Ride ride;
@@ -73,6 +74,19 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     }
   }
 
+  void _addRideToCalendar(Ride ride){
+    final DateTime rideStart = ride.rideDate.toDate();
+    final DateTime rideEnd = rideStart.add(Duration(hours: 1));
+
+    final Event event = Event(
+      title: 'Ride from ${ride.origin} to ${ride.destination}',
+      description: 'Ride Details: ${ride.fare} fare, ${ride.availableSeats} seats',
+      location: 'Departure: ${ride.origin}',
+      startDate: rideStart,
+      endDate: rideEnd,
+    );
+    Add2Calendar.addEvent2Cal(event);
+  }
   // --- UI BUILDER WIDGETS ---
 
   // Consistent AppBar Widget
@@ -132,6 +146,10 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   _buildRouteCard(ride),
                   const SizedBox(height: 16),
                   _buildDetailsCard(ride),
+                  ElevatedButton(
+                    onPressed: () => _addRideToCalendar(ride),
+                    child: Text('Add to Calendar'),
+                  ),
                   if (isDriver) ...[
                     const SizedBox(height: 16),
                     _buildDriverAdminCard(ride),

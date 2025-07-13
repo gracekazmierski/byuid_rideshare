@@ -15,11 +15,14 @@ import 'package:flutter/services.dart';
 enum AmPm { am, pm }
 
 class CreateRideScreen extends StatefulWidget {
+  // MERGED: Combined parameters from both branches to support all cases.
+  final Ride? existingRide;
   final String? initialOrigin;
   final String? initialDestination;
 
   const CreateRideScreen({
     super.key,
+    this.existingRide,
     this.initialOrigin,
     this.initialDestination,
   });
@@ -41,21 +44,46 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   final FocusNode _fareFocusNode = FocusNode();
 
   DateTime? _selectedDate;
+  TimeOfDay? _selectedTime; // Added from logan-updated-ui branch
   bool _isLoading = false;
   AmPm? _selectedAmPm;
+
+  // Added to determine if we are editing or creating
+  bool get _isEditing => widget.existingRide != null;
 
   @override
   void initState() {
     super.initState();
     _fareFocusNode.addListener(_formatFareOnLostFocus);
 
-    if (widget.initialOrigin != null) {
-      _originController.text = widget.initialOrigin!;
-    }
-    if (widget.initialDestination != null) {
-      _destinationController.text = widget.initialDestination!;
+    // MERGED: Prioritize editing logic, then handle pre-filling for new rides.
+    if (_isEditing) {
+      // Logic from logan-updated-ui branch for editing
+      final ride = widget.existingRide!;
+      _originController.text = ride.origin;
+      _destinationController.text = ride.destination;
+      _availableSeatsController.text = ride.availableSeats.toString();
+      _fareController.text = ride.fare?.toStringAsFixed(2) ?? '';
+      _selectedDate = ride.rideDate.toDate();
+      _selectedTime = TimeOfDay.fromDateTime(_selectedDate!);
+      _rideDateController.text = DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate!);
+
+      // Set AM/PM from the existing time
+      _selectedAmPm = _selectedTime!.hour < 12 ? AmPm.am : AmPm.pm;
+      // Format time to 12-hour format for the text field
+      _timeController.text = DateFormat('h:mm').format(_selectedDate!);
+
+    } else {
+      // Logic from main branch for pre-filling a new ride
+      if (widget.initialOrigin != null) {
+        _originController.text = widget.initialOrigin!;
+      }
+      if (widget.initialDestination != null) {
+        _destinationController.text = widget.initialDestination!;
+      }
     }
   }
+
 
   @override
   void dispose() {
@@ -86,24 +114,16 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
   TimeOfDay? _parseTimeWithAmPm(String timeStr, AmPm? amPm) {
     if (amPm == null) return null;
-
     try {
       final parts = timeStr.split(':');
       if (parts.length != 2) return null;
-
       int hour = int.parse(parts[0]);
       final int minute = int.parse(parts[1]);
-
       if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return null;
-
       if (amPm == AmPm.am) {
-        if (hour == 12) {
-          hour = 0;
-        }
-      } else {
-        if (hour != 12) {
-          hour += 12;
-        }
+        if (hour == 12) hour = 0; // Midnight case
+      } else { // PM
+        if (hour != 12) hour += 12; // Afternoon/evening case
       }
       return TimeOfDay(hour: hour, minute: minute);
     } catch (e) {
@@ -111,9 +131,10 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     }
   }
 
-  void _postRide() async {
+  // Renamed to handle both creating and updating
+  void _submitRide() async {
     if (!_formkey.currentState!.validate()) {
-      setState(() {});
+      setState(() {}); // Re-build to show validation errors if any
       return;
     }
 
@@ -134,7 +155,6 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     }
 
     final TimeOfDay? rideTime = _parseTimeWithAmPm(_timeController.text, _selectedAmPm);
-
     if (_selectedDate == null || rideTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a valid date and time.')));
       setState(() => _isLoading = false);
@@ -146,7 +166,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     final double? fare = double.tryParse(_fareController.text);
 
     final ride = Ride(
-      id: '',
+      id: _isEditing ? widget.existingRide!.id : '', // Use existing ID if editing
       origin: _originController.text.trim(),
       destination: _destinationController.text.trim(),
       availableSeats: availableSeats!,
@@ -154,15 +174,24 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
       driverUid: user.uid,
       driverName: '${userProfile.firstName} ${userProfile.lastName}',
       rideDate: Timestamp.fromDate(finalRideDateTime),
-      postCreationTime: Timestamp.now(),
-      isFull: false,
-      joinedUserUids: [],
+      // Keep original post time if editing, otherwise set new
+      postCreationTime: _isEditing ? widget.existingRide!.postCreationTime : Timestamp.now(),
+      isFull: _isEditing ? widget.existingRide!.isFull : false,
+      joinedUserUids: _isEditing ? widget.existingRide!.joinedUserUids : [],
     );
 
     try {
-      await RideService.saveRideListing(ride);
-      if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
+      if (_isEditing) {
+        await RideService.updateRideListing(ride);
+        if (!mounted) return;
+        // Pop twice to get back to ride details screen after editing
+        Navigator.of(context).pop();
+        Navigator.of(context).pop(true); // Pop with a result to indicate success
+      } else {
+        await RideService.saveRideListing(ride);
+        if (!mounted) return;
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post ride: $e')));
@@ -199,13 +228,13 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 8),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Offer a Ride', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
-                  SizedBox(height: 2.0),
-                  Text("Fill out the details below", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(_isEditing ? 'Update Your Ride' : 'Offer a Ride', style: const TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2.0),
+                  Text(_isEditing ? "Update the details below" : "Fill out the details below", style: const TextStyle(color: AppColors.blue100, fontSize: 14.0)),
                 ],
               ),
             ],
@@ -373,7 +402,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
             SizedBox(
               height: 48.0,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _postRide,
+                onPressed: _isLoading ? null : _submitRide,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.byuiBlue,
                   foregroundColor: Colors.white,
@@ -381,7 +410,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 ),
                 child: _isLoading
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                    : const Text('Post Ride', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                    : Text(_isEditing ? 'Update Ride' : 'Post Ride', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
               ),
             ),
           ],
