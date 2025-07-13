@@ -44,10 +44,6 @@ class MyApp extends StatelessWidget {
 
       // The home property points to AuthWrapper, which decides the initial screen
       home: const AuthWrapper(),
-      // home: Scaffold(
-      //   appBar: AppBar(title: Text('It works!')),
-      //   body: Center(child: Text('Firebase Connected')),
-      // ),
 
       // Define named routes for navigation within your app
       routes: {
