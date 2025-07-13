@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "527415309529-u4v5cohi3edunm3f6dolon2r6pl02bst.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.byui_rideshare",
+            "certificate_hash": "9962974a531041e17982107e229c9dacd16ce53a"
+          }
+        },
+        {
           "client_id": "527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com",
           "client_type": 3
         }
