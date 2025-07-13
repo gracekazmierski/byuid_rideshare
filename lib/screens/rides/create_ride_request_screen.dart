@@ -1,5 +1,3 @@
-// lib/screens/create_ride_request_screen.dart
-
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,16 +14,11 @@ class CreateRideRequestScreen extends StatefulWidget {
 
 class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  // Form controllers
   final _fromController = TextEditingController();
   final _toController = TextEditingController();
   final _notesController = TextEditingController();
-  final _dateRangeController = TextEditingController();
-
-  // State for the date selection
-  DateTime? _startDate;
-  DateTime? _endDate;
+  final _dateController = TextEditingController();
+  DateTime? _selectedDate;
   bool _isLoading = false;
 
   @override
@@ -33,33 +26,43 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
     _fromController.dispose();
     _toController.dispose();
     _notesController.dispose();
-    _dateRangeController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
-  // --- Date Picker Logic ---
-  Future<void> _selectDateRange() async {
-    final picked = await showDateRangePicker(
+  Future<void> _selectDate() async {
+    DateTime? picked = await showDatePicker(
       context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: 'Select a Date or a Range',
-      errorFormatText: 'Enter valid dates',
-      errorInvalidRangeText: 'End date must be after start date',
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.byuiBlue,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textGray600,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.byuiBlue,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
-
     if (picked != null) {
       setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-        // Format the date(s) to be readable in the text field
-        _dateRangeController.text =
-        '${DateFormat.yMMMd().format(_startDate!)} - ${DateFormat.yMMMd().format(_endDate ?? _startDate!)}';
+        _selectedDate = picked;
+        _dateController.text =
+            DateFormat('EEEE, MMMM d, yyyy').format(picked);
       });
     }
   }
 
-  // --- Submit Logic ---
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -69,7 +72,6 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      // Handle user not logged in
       setState(() => _isLoading = false);
       return;
     }
@@ -81,17 +83,16 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
         'from_location': _fromController.text.trim(),
         'to_location': _toController.text.trim(),
         'notes': _notesController.text.trim(),
-        'request_date_start': Timestamp.fromDate(_startDate!),
-        'request_date_end': Timestamp.fromDate(_endDate ?? _startDate!),
-        'riders': [
-          {'uid': user.uid, 'name': user.displayName ?? 'Anonymous'}
-        ],
+        // ✅ FIX: Saving the single selected date to a single field
+        'request_date': Timestamp.fromDate(_selectedDate!),
+        'riders': [{'uid': user.uid, 'name': user.displayName ?? 'Anonymous'}],
+        'rider_uids': [user.uid],
         'status': 'active',
         'created_at': Timestamp.now(),
       });
 
       if (mounted) {
-        Navigator.of(context).pop(); // Go back to the list screen
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ride request posted successfully!')),
         );
@@ -109,16 +110,11 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
     }
   }
 
-  // --- Styling Helper Methods (from create_ride_screen) ---
-
-  // --- CHANGE 1: Update the input decoration to style the label correctly ---
   InputDecoration _inputDecoration(
       {required String labelText, Widget? suffixIcon}) {
     return InputDecoration(
       labelText: labelText,
-      // Default state (inside the field) is gray
       labelStyle: const TextStyle(color: AppColors.textGray600),
-      // Floating state (above the field) is blue
       floatingLabelStyle: const TextStyle(color: AppColors.byuiBlue),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
@@ -168,7 +164,6 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
     );
   }
 
-  // --- CHANGE 2: Update the section card to use a blue title ---
   Widget _buildSectionCard(
       {required String title, required List<Widget> children}) {
     return Container(
@@ -185,7 +180,7 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.byuiBlue)), // Set title color to blue
+                  color: AppColors.byuiBlue)),
           const SizedBox(height: 20),
           ...children,
         ],
@@ -195,7 +190,6 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- CHANGE 3: Define a gray text style for the user's typed input ---
     const grayInputTextStyle = TextStyle(color: AppColors.textGray600);
 
     return Scaffold(
@@ -211,7 +205,7 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
               children: [
                 TextFormField(
                   controller: _fromController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   decoration:
                   _inputDecoration(labelText: 'From (e.g., Rexburg, ID)'),
                   validator: (v) =>
@@ -220,7 +214,7 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _toController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   decoration: _inputDecoration(
                       labelText: 'To (e.g., Salt Lake City, UT)'),
                   validator: (v) =>
@@ -233,25 +227,25 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
               title: 'Request Details',
               children: [
                 TextFormField(
-                  controller: _dateRangeController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  controller: _dateController,
+                  style: grayInputTextStyle,
                   decoration: _inputDecoration(
-                    labelText: 'Date Range',
+                    labelText: 'Date',
                     suffixIcon: IconButton(
-                      // --- CHANGE 4: Set the calendar icon color to blue ---
                       icon: const Icon(Icons.calendar_today,
                           color: AppColors.byuiBlue),
-                      onPressed: _selectDateRange,
+                      onPressed:
+                      _selectDate,
                     ),
                   ),
                   readOnly: true,
                   validator: (v) =>
-                  v!.isEmpty ? 'Please select a date range' : null,
+                  v!.isEmpty ? 'Please select a date' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _notesController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   decoration: _inputDecoration(
                       labelText: 'Notes (e.g., I have one large suitcase)'),
                   maxLines: 3,

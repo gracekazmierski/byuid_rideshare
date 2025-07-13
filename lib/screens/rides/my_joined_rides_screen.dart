@@ -1,4 +1,5 @@
-// lib/screens/rides/my_joined_rides_screen.dart
+import 'package:byui_rideshare/models/posted_request.dart';
+import 'package:byui_rideshare/services/posted_request_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/models/ride.dart';
@@ -12,7 +13,6 @@ import 'package:intl/intl.dart';
 class MyJoinedRidesScreen extends StatelessWidget {
   const MyJoinedRidesScreen({super.key});
 
-  // --- AppBar Widget ---
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 40),
@@ -34,7 +34,7 @@ class MyJoinedRidesScreen extends StatelessWidget {
                 children: [
                   Text('My Joined Rides', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
                   SizedBox(height: 2.0),
-                  Text("Rides you've been accepted into", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text("View the rides you have joined", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
                 ],
               ),
             ],
@@ -47,177 +47,244 @@ class MyJoinedRidesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-
     if (currentUser == null) {
-      // This case should ideally not be reached if routes are protected
-      return Scaffold(
-        appBar: AppBar(title: const Text('My Joined Rides')),
-        body: const Center(child: Text('Please log in to see your rides.')),
-      );
+      return Scaffold(appBar: _buildAppBar(context), body: const Center(child: Text('Please log in.')));
     }
+
+    final buttonStyle = ElevatedButton.styleFrom(
+      backgroundColor: AppColors.byuiBlue,
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
       appBar: _buildAppBar(context),
-      body: StreamBuilder<List<Ride>>(
-        stream: RideService.fetchJoinedRideListings(currentUser.uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('An error occurred: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return _buildEmptyState(context);
-          }
+      body: ListView(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+            child: Text('Joined Rides', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          ),
+          StreamBuilder<List<Ride>>(
+            stream: RideService.fetchJoinedRideListings(currentUser.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
 
-          final rides = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: rides.length,
-            itemBuilder: (context, index) {
-              final ride = rides[index];
-              return _buildRideCard(context, ride);
+              final rides = snapshot.data ?? [];
+              return Column(
+                children: [
+                  if (rides.isEmpty)
+                    const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('You have not joined any rides.')))
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: rides.length,
+                      itemBuilder: (context, index) => _buildRideCard(context, rides[index]),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // ✨ CHANGED to ElevatedButton.icon
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.search),
+                          label: const Text('Search for a ride'),
+                          style: buttonStyle,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RideListScreen()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
             },
-          );
-        },
+          ),
+          const Divider(height: 32, indent: 16, endIndent: 16),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text('Pending Requests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          ),
+          StreamBuilder<List<PostedRequest>>(
+            stream: PostedRequestService.fetchJoinedRideRequests(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+
+              final requests = snapshot.data ?? [];
+              return Column(
+                children: [
+                  if (requests.isEmpty)
+                    const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('You have not joined any ride requests.')))
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: requests.length,
+                      itemBuilder: (context, index) => JoinedRequestCard(request: requests[index]),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // ✨ CHANGED to ElevatedButton.icon
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.search),
+                          label: const Text('Search ride requests'),
+                          style: buttonStyle,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RideListScreen()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 
-  // --- Reusable Ride Card Widget ---
+  // This card for confirmed rides remains the same.
   Widget _buildRideCard(BuildContext context, Ride ride) {
-    final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
-        splashFactory: NoSplash.splashFactory,
-        highlightColor: Colors.transparent,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RideDetailScreen(ride: ride),
-            ),
-          );
-        },
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RideDetailScreen(ride: ride))),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Container(
-                      width: 8, height: 8,
-                      decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)),
-                      margin: const EdgeInsets.only(right: 8),
-                    ),
-                    Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-                  ]),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Container(
-                      width: 8, height: 8,
-                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                      margin: const EdgeInsets.only(right: 8),
-                    ),
-                    Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-                  ]),
-                ],
-              ),
+              Row(children: [
+                Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(right: 8)),
+                Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
+              ]),
+              const SizedBox(height: 4),
+              Row(children: [
+                Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(right: 8)),
+                Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
+              ]),
               const SizedBox(height: 12),
               Row(children: [
                 const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
                 const SizedBox(width: 8),
-                Text('${DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate())}', style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
+                Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()), style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
               ]),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(children: [
-                    const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
-                    const SizedBox(width: 8),
-                    Text('${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
-                  ]),
-                  FutureBuilder<String?>(
-                    future: UserService.getUserName(ride.driverUid),
-                    builder: (context, snapshot) {
-                      final name = snapshot.data ?? "Loading...";
-                      return Row(children: [
-                        const CircleAvatar(radius: 12, backgroundColor: Color(0xFFe6f1fa), child: Icon(Icons.person, size: 14, color: AppColors.byuiBlue)),
-                        const SizedBox(width: 4),
-                        Text(name, style: const TextStyle(fontSize: 12, color: AppColors.textGray500)),
-                      ]);
-                    },
-                  ),
-                ],
-              ),
-              if (isRideFull)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                      child: const Text('FULL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  // --- Helpful Empty State Widget ---
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
+// ✅ NEW, DETAILED, AND FUNCTIONAL WIDGET FOR JOINED REQUESTS
+class JoinedRequestCard extends StatefulWidget {
+  final PostedRequest request;
+  const JoinedRequestCard({super.key, required this.request});
+
+  @override
+  State<JoinedRequestCard> createState() => _JoinedRequestCardState();
+}
+
+class _JoinedRequestCardState extends State<JoinedRequestCard> {
+  bool _isLeaving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateString = DateFormat('EEEE, MMM d').format(widget.request.requestDate.toDate());
+
+    return Card(
+      color: Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.explore_outlined, size: 80, color: AppColors.textGray500),
-            const SizedBox(height: 20),
-            const Text(
-              'No Joined Rides Yet',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textGray600),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        '${widget.request.fromLocation} to ${widget.request.toLocation}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                    ),
+                    const SizedBox(height: 4),
+                    Text(dateString, style: const TextStyle(color: AppColors.textGray500)),
+                  ],
+                ),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Pending', style: TextStyle(color: AppColors.byuiBlue, fontWeight: FontWeight.w500)),
+                    Icon(Icons.hourglass_top_rounded, color: AppColors.byuiBlue, size: 18),
+                  ],
+                )
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              "Explore the ride board to find a ride that fits your schedule!",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: AppColors.textGray500),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.search),
-              label: const Text('Find a Ride'),
-              onPressed: () {
-                // Navigate to the main ride list screen
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RideListScreen()),
-                      (route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.byuiBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-              ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Display the name of the original requester
+                FutureBuilder<String?>(
+                  future: UserService.getUserName(widget.request.requesterUid),
+                  builder: (context, snapshot) {
+                    return Text(
+                        'Requested by ${snapshot.data ?? "..."}',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textGray600)
+                    );
+                  },
+                ),
+                // The Leave Request button
+                _isLeaving
+                    ? const CircularProgressIndicator()
+                    : TextButton(
+                  onPressed: () async {
+                    setState(() => _isLeaving = true);
+                    try {
+                      await PostedRequestService.leaveRideRequest(widget.request.id);
+                      if(mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("You left the ride request."), backgroundColor: Colors.green));
+                      }
+                    } catch (e) {
+                      if(mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to leave: $e"), backgroundColor: Colors.red));
+                      }
+                    } finally {
+                      if(mounted) setState(() => _isLeaving = false);
+                    }
+                  },
+                  style: TextButton.styleFrom(foregroundColor: AppColors.red500),
+                  child: const Text('Leave'),
+                ),
+              ],
             )
           ],
         ),

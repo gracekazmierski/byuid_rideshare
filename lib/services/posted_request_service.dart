@@ -41,14 +41,53 @@ class PostedRequestService {
       return requests;
     });
   }
+  static Stream<List<PostedRequest>> fetchJoinedRideRequests() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return Stream.value([]);
+    }
 
-  static Future<void> joinRideRequest(String requestId) async {
+    return _collection
+        .where('status', isEqualTo: 'active')
+        .where('rider_uids', arrayContains: user.uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList());
+  }
+
+  static Future<void> leaveRideRequest(String requestId) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("You must be logged in.");
 
     final requestRef = _collection.doc(requestId);
-    final newRider = {'uid': user.uid, 'name': user.displayName ?? 'Anonymous'};
-    await requestRef.update({'riders': FieldValue.arrayUnion([newRider])});
+
+    // This data must match what's in your 'riders' array map exactly
+    final riderToRemove = {
+      'uid': user.uid,
+      'name': user.displayName ?? 'Anonymous Rider',
+    };
+
+    // Use FieldValue.arrayRemove to remove the user from both arrays
+    await requestRef.update({
+      'riders': FieldValue.arrayRemove([riderToRemove]),
+      'rider_uids': FieldValue.arrayRemove([user.uid])
+    });
+  }
+
+  static Future<void> joinRideRequest(String requestId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("You must be logged in to join a request.");
+
+    final requestRef = _collection.doc(requestId);
+    final newRider = {
+      'uid': user.uid,
+      'name': user.displayName ?? 'Anonymous Rider',
+    };
+
+    // ✅ Update BOTH arrays at the same time
+    await requestRef.update({
+      'riders': FieldValue.arrayUnion([newRider]),
+      'rider_uids': FieldValue.arrayUnion([user.uid])
+    });
   }
 
   static Future<void> fulfillRideRequest({

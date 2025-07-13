@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import '../models/ride.dart';
 // import 'package:byui_rideshare/screens/rides/driver_requests_screen.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
-
+import 'package:byui_rideshare/models/sort_option.dart';
 
 class RideService {
   static final CollectionReference ridesCollection =

@@ -22,13 +22,8 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
   bool _isLoading = false;
 
   Future<void> _selectDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: widget.request.requestDateStart.toDate(),
-      firstDate: widget.request.requestDateStart.toDate(),
-      lastDate: widget.request.requestDateEnd.toDate(),
-    );
-    if (date == null) return;
+    // ✅ FIX: The date is now fixed to the requested date. The driver only picks a time.
+    final date = widget.request.requestDate.toDate();
 
     final time = await showTimePicker(
       context: context,
@@ -40,6 +35,7 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
       _selectedDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
+
 
   Future<void> _submitOffer() async {
     if (_seatsController.text.isEmpty || _fareController.text.isEmpty || _selectedDateTime == null) {

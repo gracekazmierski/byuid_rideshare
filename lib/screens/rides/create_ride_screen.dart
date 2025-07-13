@@ -176,7 +176,6 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   InputDecoration _inputDecoration({required String labelText, Widget? suffixIcon}) {
     return InputDecoration(
       labelText: labelText,
-      // The label text is blue
       labelStyle: const TextStyle(color: AppColors.textGray600),
       floatingLabelStyle: const TextStyle(color: AppColors.byuiBlue),
       suffixIcon: suffixIcon,
@@ -218,7 +217,6 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- CHANGE 1: Define gray text style for user input ---
     const grayInputTextStyle = TextStyle(color: AppColors.textGray600);
 
     return Scaffold(
@@ -234,14 +232,14 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
               children: [
                 TextFormField(
                   controller: _originController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Origin (e.g., Rexburg, ID)'),
                   validator: (v) => v!.isEmpty ? 'Please enter an origin' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _destinationController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Destination (e.g., Salt Lake City, UT)'),
                   validator: (v) => v!.isEmpty ? 'Please enter a destination' : null,
                 ),
@@ -253,7 +251,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
               children: [
                 TextFormField(
                   controller: _availableSeatsController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Available Seats'),
                   keyboardType: TextInputType.number,
                   validator: (v) => (v == null || v.isEmpty || int.tryParse(v) == null) ? 'Enter a valid number' : null,
@@ -261,7 +259,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _fareController,
-                  style: grayInputTextStyle, // Use gray for typed text
+                  style: grayInputTextStyle,
                   focusNode: _fareFocusNode,
                   decoration: _inputDecoration(labelText: 'Fare per person (\$)'),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -281,7 +279,31 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.calendar_today, color: AppColors.byuiBlue),
                       onPressed: () async {
-                        DateTime? picked = await showDatePicker(context: context, initialDate: _selectedDate ?? DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2101));
+                        DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2101),
+                          // --- CHANGE: Added builder to theme the calendar ---
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.light(
+                                  primary: AppColors.byuiBlue, // Header background
+                                  onPrimary: Colors.white, // Header text
+                                  onSurface: AppColors.textGray600, // Body text
+                                ),
+                                textButtonTheme: TextButtonThemeData(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.byuiBlue, // Button text
+                                  ),
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                          // --- END CHANGE ---
+                        );
                         if (picked != null) {
                           setState(() {
                             _selectedDate = picked;
@@ -337,7 +359,6 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                     emptySelectionAllowed: true,
                     showSelectedIcon: false,
                     style: SegmentedButton.styleFrom(
-                      // --- UPDATED per your request ---
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.byuiBlue,
                       selectedBackgroundColor: AppColors.byuiBlue,

@@ -1,7 +1,7 @@
 // lib/screens/rides/posted_request_detail_screen.dart
 
 import 'package:byui_rideshare/models/posted_request.dart';
-import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
+import 'package:byui_rideshare/screens/rides/fulfill_request_screen.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -55,17 +55,16 @@ class PostedRequestDetailScreen extends StatelessWidget {
                   },
                 ),
                 const Divider(height: 1, indent: 56),
+                // ✅ FIX: Changed to display the single 'requestDate' field
                 _buildDetailTile(
                     icon: Icons.date_range,
-                    title: 'Desired Date Range',
-                    subtitle:
-                    '${DateFormat('MMM d, yyyy').format(request.requestDateStart.toDate())} - ${DateFormat('MMM d, yyyy').format(request.requestDateEnd.toDate())}'),
+                    title: 'Desired Date',
+                    subtitle: DateFormat('EEEE, MMM d, yyyy').format(request.requestDate.toDate())),
                 const Divider(height: 1, indent: 56),
                 _buildDetailTile(
                     icon: Icons.group_rounded,
                     title: 'Number of Riders',
-                    subtitle:
-                    '${request.riders.length} rider${request.riders.length == 1 ? '' : 's'}'),
+                    subtitle: '${request.riders.length} rider${request.riders.length == 1 ? '' : 's'}'),
               ],
             ),
           ),
@@ -80,10 +79,7 @@ class PostedRequestDetailScreen extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => CreateRideScreen(
-                  initialOrigin: request.fromLocation,
-                  initialDestination: request.toLocation,
-                ),
+                builder: (context) => FulfillRequestScreen(request: request),
               ),
             );
           },
@@ -99,6 +95,7 @@ class PostedRequestDetailScreen extends StatelessWidget {
     );
   }
 
+  // ✅ FIX: These helper methods are now fully implemented.
   Widget _buildSectionCard({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
