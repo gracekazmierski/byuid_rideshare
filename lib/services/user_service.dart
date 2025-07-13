@@ -1,19 +1,64 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class UserService {
   static final CollectionReference usersCollection =
-      FirebaseFirestore.instance.collection('users');
+  FirebaseFirestore.instance.collection('users');
 
-  /// Saves or updates the user profile
+  /// Saves or updates the user profile, including FCM token
   static Future<void> saveUserProfile(UserProfile profile) async {
     try {
-      await usersCollection.doc(profile.uid).set(profile.toFirestore());
+      // Get current FCM token
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        print('FCM token retrieved: $fcmToken');
+        // Add token to profile data before saving
+        final data = profile.toFirestore();
+        data['fcmToken'] = fcmToken;
+        await usersCollection.doc(profile.uid).set(data);
+      } else {
+        print('FCM token was null — skipping token save');
+        await usersCollection.doc(profile.uid).set(profile.toFirestore());
+      }
+
       print('User profile saved');
     } catch (e) {
       print('Failed to save user profile: $e');
     }
+  }
+
+  /// Listens for FCM token refresh and updates Firestore
+  static void listenForTokenRefresh() {
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await usersCollection.doc(user.uid).update({'fcmToken': newToken});
+        print('FCM token updated after refresh: $newToken');
+      }
+    });
+  }
+
+  /// Save FCM token independently (if needed)
+  static Future<void> saveFcmToken() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print("User not logged in, cannot save FCM token.");
+      return;
+    }
+
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+    if (fcmToken == null) {
+      print("Failed to get FCM token.");
+      return;
+    }
+
+    print("Saving FCM token: $fcmToken");
+
+    await usersCollection.doc(user.uid).update({
+      'fcmToken': fcmToken,
+    });
   }
 
   /// Fetches a user profile by uid
@@ -36,7 +81,7 @@ class UserService {
 
   static Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
     try {
-      final docRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      final docRef = usersCollection.doc(userId);
       await docRef.set(data, SetOptions(merge: true));
       print('User profile updated!');
     } catch (e) {
@@ -87,7 +132,6 @@ class UserService {
       return "Unknown Driver";
     }
   }
-
 }
 
 void testProfileSave() async {

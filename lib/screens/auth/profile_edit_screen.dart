@@ -58,7 +58,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    // ... (logic is unchanged)
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       setState(() => _isLoading = false);
@@ -70,7 +69,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       setState(() {
         _firstNameController.text = profile.firstName;
         _lastNameController.text = profile.lastName;
-        _phoneController.text = profile.phoneNumber;
+
+        // ✅ FIX: Use the formatter to mask the text when loading it
+        _phoneController.text = _phoneFormatter.maskText(profile.phoneNumber);
+
         _facebookController.text = profile.facebookUsername ?? '';
 
         if (profile.isDriver) {
@@ -104,7 +106,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         uid: currentUser.uid,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneFormatter.getUnmaskedText(),
+        phoneNumber: _phoneController.text.replaceAll(RegExp(r'[^0-9]'), ''),
         facebookUsername: _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
         vehicleMake: _selectedRole == UserRole.driver ? _vehicleMakeController.text.trim() : null,
@@ -315,7 +317,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       decoration: _inputDecoration(labelText: 'Phone Number'),
                       keyboardType: TextInputType.phone,
                       inputFormatters: [_phoneFormatter],
-                      validator: (v) => _phoneFormatter.getUnmaskedText().length != 10 ? 'Enter a valid 10-digit phone number' : null,
+                      // ✅ FIX: Get the text from the controller directly for validation
+                      validator: (value) {
+                        final unmaskedText = value?.replaceAll(RegExp(r'[^0-9]'), '');
+                        if (unmaskedText == null || unmaskedText.length != 10) {
+                          return 'Enter a valid 10-digit phone number';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(controller: _facebookController, decoration: _inputDecoration(labelText: 'Facebook Username')),

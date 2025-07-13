@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import '../models/ride.dart';
 // import 'package:byui_rideshare/screens/rides/driver_requests_screen.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
-
+import 'package:byui_rideshare/models/sort_option.dart';
 
 class RideService {
   static final CollectionReference ridesCollection =
@@ -123,38 +123,38 @@ class RideService {
     });
 
 
-    return ridesCollection
-        .orderBy('rideDate', descending: false) // Order by date, earliest first
-        .snapshots() // Get a stream of query snapshots (real-time updates)
-        .map((snapshot) {
-          // Convert each document snapshot into a Ride object and collect them into a List<Ride>
-          List<Ride> rides = snapshot.docs
-              .map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
-              .toList();
+    // return ridesCollection
+    //     .orderBy('rideDate', descending: false) // Order by date, earliest first
+    //     .snapshots() // Get a stream of query snapshots (real-time updates)
+    //     .map((snapshot) {
+    //       // Convert each document snapshot into a Ride object and collect them into a List<Ride>
+    //       List<Ride> rides = snapshot.docs
+    //           .map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+    //           .toList();
 
-          // If a search query is provided, filter the list of rides
-          //The query is matched against the "origin" and "destination"
-          if (fromLocation != null && fromLocation.isNotEmpty) {
-            final lowerQuery = fromLocation.toLowerCase();
-            rides = rides.where((ride) =>
-              ride.origin.toLowerCase().contains(fromLocation.toLowerCase())
-            ).toList();// Make lowercase so there are no spell search errors.
-          }
+    //       // If a search query is provided, filter the list of rides
+    //       //The query is matched against the "origin" and "destination"
+    //       if (fromLocation != null && fromLocation.isNotEmpty) {
+    //         final lowerQuery = fromLocation.toLowerCase();
+    //         rides = rides.where((ride) =>
+    //           ride.origin.toLowerCase().contains(fromLocation.toLowerCase())
+    //         ).toList();// Make lowercase so there are no spell search errors.
+    //       }
 
-          if (toLocation != null && toLocation.isNotEmpty){
-            rides = rides.where((ride) =>
-              ride.destination.toLowerCase().contains(toLocation.toLowerCase())
-            ).toList();
-          }
+    //       if (toLocation != null && toLocation.isNotEmpty){
+    //         rides = rides.where((ride) =>
+    //           ride.destination.toLowerCase().contains(toLocation.toLowerCase())
+    //         ).toList();
+    //       }
 
-          return rides;
+    //       return rides;
 
-      // Map each snapshot to a List<Ride>
-      // return snapshot.docs
-      //     .map((doc) =>
-      //     Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
-      //     .toList();
-    });
+    //   // Map each snapshot to a List<Ride>
+    //   // return snapshot.docs
+    //   //     .map((doc) =>
+    //   //     Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+    //   //     .toList();
+    // });
   }
 
   /// Fetches a stream of ride listings for a specific driver, ordered by rideDate.
@@ -257,14 +257,6 @@ class RideService {
       });
 
       transaction.delete(requestRef);
-    });
-
-    // Notify the rider
-    await _firestore.collection('notifications').add({
-      'userId': riderUid,
-      'message': 'Your request to join ride $rideId was accepted.',
-      'timestamp': FieldValue.serverTimestamp(),
-      'read': false,
     });
   }
 

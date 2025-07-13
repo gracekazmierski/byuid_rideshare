@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/screens/rides/ride_list_screen.dart';
 import 'package:byui_rideshare/screens/auth/welcome_screen.dart'; // Or your login screen
+import 'package:byui_rideshare/services/save_fcm_token_on_login.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -35,8 +36,7 @@ class AuthWrapper extends StatelessWidget {
 
         // State 3: We have data, meaning the user IS logged in
         if (snapshot.hasData) {
-          // If snapshot.data is not null, a user is signed in.
-          // Show the main part of your app.
+          saveFcmTokenToUser();
           return const RideListScreen();
         }
 
