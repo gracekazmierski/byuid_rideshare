@@ -28,12 +28,71 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     _currentUser = FirebaseAuth.instance.currentUser;
   }
 
-  // --- ACTION HANDLERS (Unchanged) ---
-  void _joinRide(String rideId) async {/*...*/}
-  void _acceptRequest(String requestId, String rideId, String riderUid) async {/*...*/}
-  void _denyRequest(String requestId) async {/*...*/}
-  void _removePassenger(String rideId, String passengerUid) async {/*...*/}
-  void _cancelRide(String rideId) async {/*...*/}
+  // ✅ ACTION HANDLERS - Now fully implemented
+
+  void _joinRide(String rideId) async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in to join.')));
+      return;
+    }
+    setState(() => _isProcessing = true);
+    try {
+      await RideService.requestToJoinRide(rideId, _currentUser!.uid, "");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride request sent!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  void _acceptRequest(String requestId, String rideId, String riderUid) async {
+    setState(() => _isProcessing = true);
+    try {
+      await RideService.acceptRideRequest(requestId, rideId, riderUid);
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request accepted.'), backgroundColor: Colors.green));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  void _denyRequest(String requestId) async {
+    try {
+      await RideService.denyRideRequest(requestId);
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request denied.')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    }
+  }
+
+  void _removePassenger(String rideId, String passengerUid) async {
+    try {
+      await RideService.removePassenger(rideId, passengerUid);
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passenger removed.')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    }
+  }
+
+  void _cancelRide(String rideId) async {
+    try {
+      await RideService.cancelRide(rideId);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride canceled.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    }
+  }
 
   Future<void> _addRideToCalendar(Ride ride) async {
     if (!kIsWeb) {

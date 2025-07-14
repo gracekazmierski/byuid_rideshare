@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:byui_rideshare/models/request_sort_option.dart';
 
 class RideRequestListScreen extends StatefulWidget {
   const RideRequestListScreen({super.key});
@@ -83,30 +84,40 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
                 initialDate: initialDate,
                 firstDate: firstDate,
                 lastDate: DateTime(2030),
-                builder: (context, child) => Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: const ColorScheme.light(
-                        primary: AppColors.byuiBlue,
-                        onPrimary: Colors.white,
-                        onSurface: AppColors.textGray600),
-                    textButtonTheme: TextButtonThemeData(
-                        style: TextButton.styleFrom(
-                            foregroundColor: AppColors.byuiBlue)),
-                  ),
-                  child: child!,
-                ),
+                builder: (context, child) =>
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.light(
+                            primary: AppColors.byuiBlue,
+                            onPrimary: Colors.white,
+                            onSurface: AppColors.textGray600),
+                        textButtonTheme: TextButtonThemeData(
+                            style: TextButton.styleFrom(
+                                foregroundColor: AppColors.byuiBlue)),
+                      ),
+                      child: child!,
+                    ),
               );
             }
 
             return Padding(
               padding: EdgeInsets.fromLTRB(
-                  24, 8, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+                  24, 8, 24, MediaQuery
+                  .of(context)
+                  .viewInsets
+                  .bottom + 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Container(width: 40, height: 5, margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: AppColors.gray300, borderRadius: BorderRadius.circular(10)))),
-                  const Text('Filters & Sorting', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+                  Center(child: Container(width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(color: AppColors.gray300,
+                          borderRadius: BorderRadius.circular(10)))),
+                  const Text('Filters & Sorting', style: TextStyle(fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textGray600)),
                   const SizedBox(height: 24),
                   DropdownButtonFormField<SortOption>(
                     value: tempSort,
@@ -127,10 +138,14 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
                   const SizedBox(height: 16),
                   const Divider(),
                   ListTile(
-                    leading: const Icon(Icons.date_range, color: AppColors.textGray500),
-                    title: const Text("Date Range", style: TextStyle(color: AppColors.textGray500)),
+                    leading: const Icon(
+                        Icons.date_range, color: AppColors.textGray500),
+                    title: const Text("Date Range",
+                        style: TextStyle(color: AppColors.textGray500)),
                     subtitle: Text(
-                        (tempStartDate == null) ? "Any date" : "${DateFormat('MM/dd/yy').format(tempStartDate!)} - ${DateFormat('MM/dd/yy').format(tempEndDate ?? tempStartDate!)}",
+                        (tempStartDate == null) ? "Any date" : "${DateFormat(
+                            'MM/dd/yy').format(tempStartDate!)} - ${DateFormat(
+                            'MM/dd/yy').format(tempEndDate ?? tempStartDate!)}",
                         style: const TextStyle(
                             color: AppColors.textGray600,
                             fontWeight: FontWeight.bold)),
@@ -149,11 +164,13 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
                     },
                     trailing: (tempStartDate != null)
                         ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textGray500),
-                        onPressed: () => sheetSetState(() {
-                          tempStartDate = null;
-                          tempEndDate = null;
-                        }))
+                        icon: const Icon(
+                            Icons.clear, color: AppColors.textGray500),
+                        onPressed: () =>
+                            sheetSetState(() {
+                              tempStartDate = null;
+                              tempEndDate = null;
+                            }))
                         : null,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -199,7 +216,8 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
               controller: _fromSearchController,
               decoration: InputDecoration(
                   hintText: 'FROM - Enter pickup location',
-                  prefixIcon: const Icon(Icons.location_on, color: AppColors.byuiGreen),
+                  prefixIcon: const Icon(
+                      Icons.location_on, color: AppColors.byuiGreen),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none),
@@ -212,7 +230,8 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
               controller: _toSearchController,
               decoration: InputDecoration(
                   hintText: 'TO - Enter destination',
-                  prefixIcon: const Icon(Icons.location_on, color: AppColors.red500),
+                  prefixIcon: const Icon(
+                      Icons.location_on, color: AppColors.red500),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none),
@@ -255,6 +274,8 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
     );
   }
 
+  // In lib/screens/rides/ride_request_list_screen.dart -> _RideRequestListScreenState
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -262,30 +283,45 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
         _buildSearchSection(),
         Expanded(
           child: StreamBuilder<List<PostedRequest>>(
-            // ✅ The service now only needs to fetch the raw data
+            // ✅ The stream call is now simpler.
             stream: PostedRequestService.fetchRideRequests(),
             builder: (BuildContext context,
                 AsyncSnapshot<List<PostedRequest>> snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-              if (snapshot.hasError) return const Center(child: Text('Error loading requests.'));
-              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) return const Center(child: Text('No active ride requests found.'));
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                print("Firestore Error: ${snapshot.error}");
+                return const Center(child: Text('Error loading requests.'));
+              }
+              if (!snapshot.hasData || snapshot.data == null ||
+                  snapshot.data!.isEmpty) {
+                return const Center(
+                    child: Text('No active ride requests found.'));
+              }
 
-              var requests = snapshot.data!;
+              var allRequests = snapshot.data!;
 
-              // ✅ All filtering and sorting is now done here in the UI layer
-              final filteredList = requests.where((req) {
-                final fromMatch = _fromQuery.isEmpty || req.fromLocation.toLowerCase().contains(_fromQuery);
-                final toMatch = _toQuery.isEmpty || req.toLocation.toLowerCase().contains(_toQuery);
+              // ✅ All filtering and sorting logic now happens here, inside the app.
+              final filteredList = allRequests.where((req) {
+                final fromMatch = _fromQuery.isEmpty ||
+                    req.fromLocation.toLowerCase().contains(_fromQuery);
+                final toMatch = _toQuery.isEmpty ||
+                    req.toLocation.toLowerCase().contains(_toQuery);
 
-                // Date range filtering
                 final date = req.requestDate.toDate();
-                final startDateMatch = _startDate == null || !date.isBefore(DateTime(_startDate!.year, _startDate!.month, _startDate!.day));
-                final endDateMatch = _endDate == null || !date.isAfter(DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59));
+                final startDateMatch = _startDate == null ||
+                    !date.isBefore(DateTime(
+                        _startDate!.year, _startDate!.month, _startDate!.day));
+                final endDateMatch = _endDate == null ||
+                    !date.isAfter(DateTime(
+                        _endDate!.year, _endDate!.month, _endDate!.day, 23, 59,
+                        59));
 
                 return fromMatch && toMatch && startDateMatch && endDateMatch;
               }).toList();
 
-              // Sorting
+              // Sorting the filtered list
               filteredList.sort((a, b) {
                 switch (_selectedSort) {
                   case SortOption.latest:
@@ -296,7 +332,10 @@ class _RideRequestListScreenState extends State<RideRequestListScreen> {
                 }
               });
 
-              if (filteredList.isEmpty) return const Center(child: Text('No requests match your filters.'));
+              if (filteredList.isEmpty) {
+                return const Center(
+                    child: Text('No requests match your filters.'));
+              }
 
               return ListView.builder(
                 padding: const EdgeInsets.only(top: 8),

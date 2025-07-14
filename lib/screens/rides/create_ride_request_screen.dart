@@ -83,11 +83,10 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
         'from_location': _fromController.text.trim(),
         'to_location': _toController.text.trim(),
         'notes': _notesController.text.trim(),
-        // ✅ FIX: Saving the single selected date to a single field
         'request_date': Timestamp.fromDate(_selectedDate!),
         'riders': [{'uid': user.uid, 'name': user.displayName ?? 'Anonymous'}],
         'rider_uids': [user.uid],
-        'status': 'active',
+        'status': 'active', // ✅ THIS LINE WAS MISSING
         'created_at': Timestamp.now(),
       });
 
