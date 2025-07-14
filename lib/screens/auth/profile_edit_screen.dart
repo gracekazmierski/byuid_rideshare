@@ -1,7 +1,14 @@
 // lib/screens/profile/profile_edit_screen.dart
+import 'dart:io';
+import 'dart:typed_data'; // For Uint8List;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_colors.dart';
@@ -28,7 +35,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _vehicleColorController = TextEditingController();
   final _vehicleYearController = TextEditingController();
 
+  final ImagePicker _picker = ImagePicker();
+  File? _selectedImage;
+
   UserRole _selectedRole = UserRole.rider;
+  Uint8List? _selectedImageBytes;
+  UserProfile? _loadedProfile;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -67,6 +79,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final profile = await UserService.fetchUserProfile(uid);
     if (profile != null && mounted) {
       setState(() {
+        _loadedProfile = profile;
+
         _firstNameController.text = profile.firstName;
         _lastNameController.text = profile.lastName;
 
@@ -92,16 +106,32 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _saveChanges() async {
-    // ... (logic is unchanged)
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isSaving = true);
+    if (!_formKey.currentState!.validate()) {
+      print('❌ Form validation failed');
+      return;
+    }
 
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        setState(() => _isSaving = false);
-        return;
+    setState(() => _isSaving = true);
+    print('⏳ Saving started');
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      print('❌ No logged in user');
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    String? profileUrl;
+    try {
+      if (_selectedImage != null) {
+        print('📷 Uploading File image...');
+        profileUrl = await UserService().uploadProfilePicture(currentUser.uid, _selectedImage!);
+      } else if (_selectedImageBytes != null) {
+        print('🧠 Uploading memory image...');
+        profileUrl = await UserService().uploadProfilePictureFromBytes(currentUser.uid, _selectedImageBytes!);
       }
 
+      print('🧱 Constructing user profile');
       final userProfile = UserProfile(
         uid: currentUser.uid,
         firstName: _firstNameController.text.trim(),
@@ -113,31 +143,40 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         vehicleModel: _selectedRole == UserRole.driver ? _vehicleModelController.text.trim() : null,
         vehicleColor: _selectedRole == UserRole.driver ? _vehicleColorController.text.trim() : null,
         vehicleYear: _selectedRole == UserRole.driver ? int.tryParse(_vehicleYearController.text.trim()) : null,
+        profilePictureUrl: profileUrl ?? _loadedProfile?.profilePictureUrl,
       );
 
-      try {
-        await UserService.saveUserProfile(userProfile);
-        final fullName = '${userProfile.firstName} ${userProfile.lastName}'.trim();
-        await currentUser.updateDisplayName(fullName);
+      print('💾 Saving profile to Firestore...');
+      await UserService.saveUserProfile(userProfile);
+      print('✅ Profile saved');
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved successfully!')));
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const RideListScreen()),
-                (route) => false,
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isSaving = false);
-        }
+      await currentUser.updateDisplayName('${userProfile.firstName} ${userProfile.lastName}'.trim());
+
+      if (mounted) {
+        print('🔁 Navigating to RideListScreen');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile saved successfully!')),
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const RideListScreen()),
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      print('❌ Error in saveChanges: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        print('✅ Saving flag reset');
       }
     }
   }
+
 
   Future<void> _changePassword() async {
     final currentPasswordController = TextEditingController();
@@ -305,6 +344,73 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
               children: [
+                Center(
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+                          if (pickedFile != null) {
+                            if (kIsWeb) {
+                              final bytes = await pickedFile.readAsBytes();
+                              setState(() {
+                                _selectedImageBytes = bytes;
+                                _selectedImage = null; // to avoid conflict
+                              });
+                            } else {
+                              setState(() {
+                                _selectedImage = File(pickedFile.path);
+                                _selectedImageBytes = null;
+                              });
+                            }
+                          }
+
+                        },
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: AppColors.blue100,
+                          backgroundImage: _selectedImageBytes != null
+                              ? MemoryImage(_selectedImageBytes!)
+                              : _selectedImage != null
+                              ? FileImage(_selectedImage!)
+                              : (_loadedProfile?.profilePictureUrl != null &&
+                              _loadedProfile!.profilePictureUrl!.isNotEmpty)
+                              ? NetworkImage(_loadedProfile!.profilePictureUrl!)
+                              : null,
+                          child: (_selectedImageBytes == null &&
+                              _selectedImage == null &&
+                              (_loadedProfile?.profilePictureUrl == null ||
+                                  _loadedProfile!.profilePictureUrl!.isEmpty))
+                              ? const Icon(Icons.person, size: 40, color: Colors.white)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () async {
+                          final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+                          if (pickedFile != null) {
+                            if (kIsWeb) {
+                              final bytes = await pickedFile.readAsBytes();
+                              setState(() {
+                                _selectedImageBytes = bytes;
+                                _selectedImage = null; // to avoid conflict
+                              });
+                            } else {
+                              setState(() {
+                                _selectedImage = File(pickedFile.path);
+                                _selectedImageBytes = null;
+                              });
+                            }
+                          }
+
+                        },
+                        child: const Text("Change Profile Image"),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
                 _buildSectionCard(
                   title: 'Personal Information',
                   children: [

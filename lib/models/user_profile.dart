@@ -10,6 +10,7 @@ class UserProfile {
   final String? vehicleModel;
   final String? vehicleColor;
   final int? vehicleYear;
+  final String? profilePictureUrl;
 
   UserProfile({
     required this.uid,
@@ -22,6 +23,7 @@ class UserProfile {
     this.vehicleModel,
     this.vehicleColor,
     this.vehicleYear,
+    this.profilePictureUrl,
   });
 
   Map<String, dynamic> toFirestore() {
@@ -35,6 +37,7 @@ class UserProfile {
       'vehicleModel': isDriver ? vehicleModel : null,
       'vehicleColor': isDriver ? vehicleColor : null,
       'vehicleYear': isDriver ? vehicleYear : null,
+      'profilePictureUrl': profilePictureUrl,
     };
 
     // Conditionally add facebookUsername only if it's non-null and non-empty
@@ -57,6 +60,9 @@ class UserProfile {
       vehicleModel: data['vehicleModel'],
       vehicleColor: data['vehicleColor'],
       vehicleYear: data['vehicleYear'],
+      profilePictureUrl: data['profilePictureUrl'],
     );
+
   }
+
 }
