@@ -84,9 +84,12 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
         'to_location': _toController.text.trim(),
         'notes': _notesController.text.trim(),
         'request_date': Timestamp.fromDate(_selectedDate!),
+
+        // ✅ FIX: Initialize the 'riders' and 'rider_uids' lists with the requester
         'riders': [{'uid': user.uid, 'name': user.displayName ?? 'Anonymous'}],
         'rider_uids': [user.uid],
-        'status': 'active', // ✅ THIS LINE WAS MISSING
+
+        'status': 'active',
         'created_at': Timestamp.now(),
       });
 

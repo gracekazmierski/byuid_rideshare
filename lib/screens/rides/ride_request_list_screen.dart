@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:byui_rideshare/models/request_sort_option.dart';
+import 'package:byui_rideshare/screens/rides/join_request_confirmation_screen.dart';
 
 class RideRequestListScreen extends StatefulWidget {
   const RideRequestListScreen({super.key});
@@ -387,7 +388,6 @@ class _RideRequestCardState extends State<RideRequestCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ RESTORED: Location details are now displayed at the top of the card.
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -438,10 +438,7 @@ class _RideRequestCardState extends State<RideRequestCard> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (hasJoined)
-                    const OutlinedButton(
-                      onPressed: null,
-                      child: Text('Joined'),
-                    )
+                    const OutlinedButton(onPressed: null, child: Text('Joined'))
                   else if (_isJoining)
                     const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())
                   else
@@ -450,17 +447,14 @@ class _RideRequestCardState extends State<RideRequestCard> {
                           setState(() => _isJoining = true);
                           try {
                             await PostedRequestService.joinRideRequest(widget.request.id);
-                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Successfully joined request!"), backgroundColor: Colors.green,));
+                            if (mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => JoinRequestConfirmationScreen(request: widget.request)));
                           } catch (e) {
-                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to join: ${e.toString()}"), backgroundColor: Colors.red,));
+                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to join: ${e.toString()}"), backgroundColor: Colors.red));
                           } finally {
                             if (mounted) setState(() => _isJoining = false);
                           }
                         },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.byuiBlue,
-                          side: const BorderSide(color: AppColors.byuiBlue),
-                        ),
+                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.byuiBlue, side: const BorderSide(color: AppColors.byuiBlue)),
                         child: const Text('Join')
                     ),
                   const SizedBox(width: 8),
@@ -468,10 +462,7 @@ class _RideRequestCardState extends State<RideRequestCard> {
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => FulfillRequestScreen(request: widget.request)));
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.byuiBlue,
-                        foregroundColor: Colors.white,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.byuiBlue, foregroundColor: Colors.white),
                       child: const Text('Offer Ride')
                   ),
                 ],
