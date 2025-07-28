@@ -7,8 +7,7 @@ class PostedRequest {
   final String requesterUid;
   final String fromLocation;
   final String toLocation;
-  final Timestamp requestDateStart;
-  final Timestamp requestDateEnd;
+  final Timestamp requestDate; // ✅ Replaces start and end dates
   final List<dynamic> riders;
   final String status;
 
@@ -17,8 +16,7 @@ class PostedRequest {
     required this.requesterUid,
     required this.fromLocation,
     required this.toLocation,
-    required this.requestDateStart,
-    required this.requestDateEnd,
+    required this.requestDate, // ✅ Updated constructor
     required this.riders,
     required this.status,
   });
@@ -30,8 +28,8 @@ class PostedRequest {
       requesterUid: data['requester_id'] ?? '',
       fromLocation: data['from_location'] ?? '',
       toLocation: data['to_location'] ?? '',
-      requestDateStart: data['request_date_start'] ?? Timestamp.now(),
-      requestDateEnd: data['request_date_end'] ?? Timestamp.now(),
+      // ✅ Updated to read the single 'request_date' field from Firestore
+      requestDate: data['request_date'] ?? Timestamp.now(),
       riders: data['riders'] as List<dynamic>? ?? [],
       status: data['status'] ?? 'unknown',
     );
