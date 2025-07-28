@@ -5,6 +5,7 @@ import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:byui_rideshare/services/user_service.dart';
+import 'package:byui_rideshare/screens/chat/ride_chat_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -162,11 +163,11 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
           backgroundColor: AppColors.gray50,
           appBar: _buildAppBar(context),
           body: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Stack(
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
             children: [
               ListView(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 120), // Increased bottom padding
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 160), // leave more space at the bottom for 2 buttons
                 children: [
                   _buildRouteCard(ride),
                   const SizedBox(height: 16),
@@ -178,10 +179,32 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   ],
                 ],
               ),
-              // ✅ The new bottom bar now includes the calendar button
-              _buildActionAndCalendarBar(ride, isDriver, hasJoined, rideIsFull),
+              if (isDriver || hasJoined)
+                Positioned(
+                  bottom: 80,
+                  left: 16,
+                  right: 16,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RideChatScreen(rideId: ride.id),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.byuiBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                    ),
+                    child: const Text("Open Ride Chat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              _buildActionButton(ride, isDriver, hasJoined, rideIsFull),
             ],
-          ),
+          )
         );
       },
     );
