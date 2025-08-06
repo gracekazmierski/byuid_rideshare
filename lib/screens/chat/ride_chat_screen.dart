@@ -1,33 +1,46 @@
+// ride_chat_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:byui_rideshare/services/chat_service.dart';
-import 'package:byui_rideshare/services/user_service.dart';
+import 'package:byui_rideshare/services/user_service_interface.dart';
+import 'package:byui_rideshare/services/user_service_adapter.dart';
 import 'package:byui_rideshare/models/chat_message.dart';
 
 class RideChatScreen extends StatefulWidget {
   final String rideId;
+  final ChatService chatService;
+  final IUserService userService;
 
-  const RideChatScreen({Key? key, required this.rideId}) : super(key: key);
+  RideChatScreen({
+    Key? key,
+    required this.rideId,
+    ChatService? chatService,
+    IUserService? userService,
+  })  : chatService = chatService ?? ChatService(),
+        userService = userService ?? UserServiceAdapter(),
+        super(key: key);
 
   @override
   State<RideChatScreen> createState() => _RideChatScreenState();
 }
 
 class _RideChatScreenState extends State<RideChatScreen> {
-  final ChatService _chatService = ChatService();
   final TextEditingController _controller = TextEditingController();
-  final user = FirebaseAuth.instance.currentUser;
 
   // Cache of user names
   final Map<String, String> _nameCache = {};
+
+  User? get user => FirebaseAuth.instance.currentUser;
+  ChatService get _chatService => widget.chatService;
 
   // Get user name from cache or Firestore
   Future<String> _getUserName(String uid) async {
     if (_nameCache.containsKey(uid)) {
       return _nameCache[uid]!;
     }
-    final name = await UserService.getUserName(uid) ?? "Unknown";
+    final name = await widget.userService.getUserName(uid) ?? "Unknown";
     _nameCache[uid] = name;
     return name;
   }
@@ -42,7 +55,7 @@ class _RideChatScreenState extends State<RideChatScreen> {
       timestamp: Timestamp.now(),
     );
 
-    _chatService.sendMessage(rideId: widget.rideId, message: message);
+    widget.chatService.sendMessage(rideId: widget.rideId, message: message);
     _controller.clear();
   }
 
