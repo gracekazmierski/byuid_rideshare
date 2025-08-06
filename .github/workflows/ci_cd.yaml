@@ -18,6 +18,22 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
+      
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-flutter
+
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: functions/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('functions/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node
 
       - name: Install Flutter Dependencies
         run: flutter pub get
@@ -71,5 +87,5 @@ jobs:
         if: success()
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"✅ Deployment to Firebase and Stores completed successfully!"}' \
+          --data '{"text":"Deployment to Firebase and Stores completed successfully!"}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
