@@ -12,12 +12,14 @@ class RideChatScreen extends StatefulWidget {
   final String rideId;
   final ChatService chatService;
   final IUserService userService;
+  final User? currentUser; // Optional, for testing purposes...
 
   RideChatScreen({
     Key? key,
     required this.rideId,
     ChatService? chatService,
     IUserService? userService,
+    this.currentUser, // for testing...
   })  : chatService = chatService ?? ChatService(),
         userService = userService ?? UserServiceAdapter(),
         super(key: key);
@@ -32,7 +34,8 @@ class _RideChatScreenState extends State<RideChatScreen> {
   // Cache of user names
   final Map<String, String> _nameCache = {};
 
-  User? get user => FirebaseAuth.instance.currentUser;
+  // User? get user => FirebaseAuth.instance.currentUser;
+  User? get user => widget.currentUser ?? FirebaseAuth.instance.currentUser; // for testing...
   ChatService get _chatService => widget.chatService;
 
   // Get user name from cache or Firestore

@@ -3,13 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:byui_rideshare/screens/chat/ride_chat_screen.dart';
 import 'package:byui_rideshare/models/chat_message.dart';
-import 'mocks.mocks.dart'; // generated
+import 'mocks/mocks.mocks.dart'; // generated
 import 'package:mockito/mockito.dart';
 
 void main() {
-    testWidgets('Chat screen renders messages', (WidgetTester tester) async {
+  testWidgets('Chat screen renders messages', (WidgetTester tester) async {
     final mockChatService = MockChatService();
     final mockUserService = MockIUserService();
+    final mockUser = MockUser();
+
+    // Setup fake user
+    when(mockUser.uid).thenReturn('user1');
 
     // Stub message stream
     when(mockChatService.getMessages(any)).thenAnswer(
@@ -27,17 +31,21 @@ void main() {
       (_) async => 'John Doe',
     );
 
+    // Build widget
     await tester.pumpWidget(MaterialApp(
       home: RideChatScreen(
         rideId: 'ride123',
         chatService: mockChatService,
         userService: mockUserService,
+        currentUser: mockUser, // Inject mock user
       ),
     ));
 
-    await tester.pump(); // resolve stream and FutureBuilder
+    // Allow StreamBuilder and FutureBuilder to resolve
+    await tester.pump(); // Triggers stream
+    await tester.pumpAndSettle(); // Waits for FutureBuilder
 
-    expect(find.text('Hello'), findsOneWidget);
-    expect(find.text('John Doe'), findsOneWidget);
+    expect(find.text('Hello'), findsOneWidget);      // Message text
+    expect(find.text('John Doe'), findsOneWidget);   // Sender name
   });
 }
