@@ -10,6 +10,7 @@ import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // Handles auth 
 import 'package:byui_rideshare/screens/auth/login_page.dart'; // Your actual email/password login form
 import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Screen for logged-in users
 import 'package:byui_rideshare/screens/auth/create_account_page.dart';
+import 'screens/auth/byui_verify_screen.dart';
 
 // Ensure Firebase is initialized before running the app
 void main() async {
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(), // Route to your actual login form
         '/create_account': (context) => const CreateAccountPage(),
         '/ride_list': (context) => const RideListScreen(), // Route for logged-in users
+        ByuiVerifyScreen.routeName: (context) => const ByuiVerifyScreen(),
       },
     );
   }
