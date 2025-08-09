@@ -1,5 +1,7 @@
 // lib/screens/auth/login_page.dart
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart'; // For Google Sign-In
@@ -8,6 +10,9 @@ import 'package:byui_rideshare/screens/auth/create_account_page.dart'; // To nav
 import 'package:byui_rideshare/screens/profile/profile_setup_screen.dart'; // For profile setup after sign-up
 import 'package:byui_rideshare/theme/app_colors.dart'; // Import custom colors
 import 'package:flutter/foundation.dart';
+import 'package:sign_in_button/sign_in_button.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,6 +29,8 @@ class _LoginPageState extends State<LoginPage> {
 
   // State variables for loading indicators
   bool _isGoogleSigningIn = false;
+  bool _isFacebookSigningIn = false;
+  bool _isAppleSigningIn = false;
   bool _isEmailSigningIn = false;
 
   // IMPORTANT: Replace this with your actual Google Web Client ID
@@ -152,6 +159,72 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         setState(() {
           _isGoogleSigningIn = false;
+        });
+      }
+    }
+  }
+
+  // --- Placeholder Function to handle Facebook Sign In ---
+  Future<void> _handleFacebookSignIn() async {
+    if (!mounted) return;
+    setState(() {
+      _isFacebookSigningIn = true;
+    });
+
+    try {
+      // TODO: Add your Facebook Sign-In logic here
+      // You can use `flutter_facebook_auth` package for Facebook login
+
+      await Future.delayed(const Duration(seconds: 1)); // Dummy delay to simulate loading
+
+      // After successful sign-in, navigate accordingly:
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      print('Facebook Sign-In Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred during Facebook Sign-In.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFacebookSigningIn = false;
+        });
+      }
+    }
+  }
+
+  // --- Placeholder Function to handle Apple Sign In ---
+  Future<void> _handleAppleSignIn() async {
+    if (!mounted) return;
+    setState(() {
+      _isAppleSigningIn = true;
+    });
+
+    try {
+      // TODO: Add your Apple Sign-In logic here
+      // You can use `sign_in_with_apple` package for Apple login
+
+      await Future.delayed(const Duration(seconds: 1)); // Dummy delay to simulate loading
+
+      // After successful sign-in, navigate accordingly:
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      print('Apple Sign-In Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred during Apple Sign-In.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleSigningIn = false;
         });
       }
     }
@@ -358,29 +431,44 @@ class _LoginPageState extends State<LoginPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Sign In with Google Button (w-full h-12 bg-white text-gray-700 border-gray-300 hover:bg-gray-50 font-medium rounded-lg)
-                          _isGoogleSigningIn
-                              ? const Center(child: CircularProgressIndicator())
-                              : SizedBox(
-                            width: double.infinity, // w-full
-                            height: 48.0, // h-12
-                            child: OutlinedButton(
-                              onPressed: _handleGoogleSignIn, // Calls the Google Sign-In function
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: Colors.white, // bg-white
-                                foregroundColor: AppColors.gray700, // text-gray-700
-                                side: const BorderSide(color: AppColors.gray300, width: 1.0), // border-gray-300
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0), // rounded-lg
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w500, // font-medium
+                          // Alternative Sign In buttons as icon-only mini buttons in a row
+                          if (_isGoogleSigningIn || _isFacebookSigningIn || _isAppleSigningIn)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    CircularProgressIndicator(),
+                                  ],
                                 ),
                               ),
-                              child: const Text('Sign In with Google'),
+                            )
+                          else
+                            Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SignInButton(
+                                    Buttons.google,
+                                    onPressed: _handleGoogleSignIn,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SignInButton(
+                                    Buttons.facebook,
+                                    onPressed: _handleFacebookSignIn,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (!kIsWeb && Platform.isIOS) // Show Apple sign-in only on iOS native (not web)
+                                    SignInButton(
+                                      Buttons.apple,
+                                      onPressed: _handleAppleSignIn,
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 16.0), // space-y-4
+
+                          const SizedBox(height: 16.0), // space between sign-in buttons and create account
 
                           // Create Account Button (text-center Button variant="link" className="text-[#006eb6] hover:text-[#005a9a] font-medium")
                           Center(
