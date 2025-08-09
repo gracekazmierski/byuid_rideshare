@@ -1,60 +1,63 @@
-import 'package:byui_rideshare/services/notification_service.dart';
-import 'package:byui_rideshare/services/user_service.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'package:byui_rideshare/services/firebase_options.dart';
+import 'package:byui_rideshare/services/notification_service.dart';
+import 'package:byui_rideshare/services/user_service.dart';
 
-// --- Project-Specific Imports (for screens) ---
-import 'package:byui_rideshare/screens/auth/auth_wrapper.dart'; // Handles auth redirection
-import 'package:byui_rideshare/screens/auth/login_page.dart'; // Your actual email/password login form
-import 'package:byui_rideshare/screens/rides/ride_list_screen.dart'; // Screen for logged-in users
+// Screens
+import 'package:byui_rideshare/screens/auth/auth_wrapper.dart';
+import 'package:byui_rideshare/screens/auth/login_page.dart';
 import 'package:byui_rideshare/screens/auth/create_account_page.dart';
-import 'screens/auth/byui_verify_screen.dart';
+import 'package:byui_rideshare/screens/rides/ride_list_screen.dart';
+import 'package:byui_rideshare/screens/auth/byui_verify_screen.dart';
+import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
 
-// Ensure Firebase is initialized before running the app
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Required for Firebase initialization
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // FCM permissions + listeners
   await FirebaseMessaging.instance.requestPermission();
   UserService.listenForTokenRefresh();
-
-  // Initialize with Notification click
   await NotificationService.instance.initialize();
 
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BYUI Rideshare',
-      theme: ThemeData(
-        primarySwatch: Colors.blue, // You can customize your app's main theme colors here
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      debugShowCheckedModeBanner: false,
 
-      // The home property points to AuthWrapper, which decides the initial screen
-      home: const AuthWrapper(),
+      // ❗ IMPORTANT: Do NOT set `home:`. Using routes allows Flutter web
+      // to honor the hash URL (e.g. #/byui-verify) on cold start.
+      initialRoute: '/',
 
-      // Define named routes for navigation within your app
       routes: {
-        '/login': (context) => const LoginPage(), // Route to your actual login form
+        '/': (context) => const AuthWrapper(),
+        '/login': (context) => const LoginPage(),
         '/create_account': (context) => const CreateAccountPage(),
-        '/ride_list': (context) => const RideListScreen(), // Route for logged-in users
+        '/ride_list': (context) => const RideListScreen(),
+
+        // Needed for verification bounce + profile navigation by routeName
         ByuiVerifyScreen.routeName: (context) => const ByuiVerifyScreen(),
+        ProfileEditScreen.routeName: (context) => const ProfileEditScreen(),
       },
+
+      theme: ThemeData(
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
     );
   }
 }
-
-// The MyHomePage class (your welcome screen UI) has been removed from here.
-// It should now reside solely in 'lib/screens/welcome_screen.dart'.

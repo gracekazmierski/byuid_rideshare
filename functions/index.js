@@ -1,30 +1,37 @@
 // functions/index.js
 
-// ---- Firebase Functions v2 imports ----
+// -------------------------------
+// Firebase Functions v2 imports
+// -------------------------------
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
-const { onCall } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 
-// ---- Admin SDK ----
+// -------------------------------
+// Admin SDK
+// -------------------------------
 const admin = require("firebase-admin");
 
-// Initialize Admin
+// Initialize Admin once
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// (Optional) Set defaults for all functions. You can tweak memory/timeout here.
-// Avoid CPU mismatch errors by keeping v2 everywhere.
+// -------------------------------
+// Global defaults for v2 functions
+// -------------------------------
 setGlobalOptions({
   region: "us-central1",
   timeoutSeconds: 60,
   memory: "256MiB",
+  // If you enable App Check, you can set enforceAppCheck: true at function-level below.
 });
 
 // ---------------------------------------------------------------------------
 // Scheduled cleanup: delete old rides (runs 3:00 AM America/Denver daily)
+// - Uses chunked batch deletes to stay under Firestore batch limits.
 // ---------------------------------------------------------------------------
 exports.deleteOldRides = onSchedule(
   {
@@ -33,27 +40,24 @@ exports.deleteOldRides = onSchedule(
   },
   async () => {
     const now = admin.firestore.Timestamp.now();
-    console.log("Running deleteOldRides scheduled function at:", now.toDate());
+    console.log("Running deleteOldRides at:", now.toDate());
 
-    const snapshot = await db
-      .collection("rides")
-      .where("rideDate", "<", now)
-      .get();
-
-    if (snapshot.empty) {
-      console.log("No old rides to delete found.");
+    const snap = await db.collection("rides").where("rideDate", "<", now).get();
+    if (snap.empty) {
+      console.log("No old rides to delete.");
       return;
     }
 
-    const batch = db.batch();
-    snapshot.docs.forEach((doc) => {
-      const d = doc.data();
-      console.log(`Deleting ride: ${doc.id} (Date: ${d.rideDate?.toDate?.() || d.rideDate})`);
-      batch.delete(doc.ref);
-    });
+    const docs = snap.docs;
+    // Chunk at <= 450 to leave headroom
+    for (let i = 0; i < docs.length; i += 450) {
+      const chunk = docs.slice(i, i + 450);
+      const batch = db.batch();
+      chunk.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
 
-    await batch.commit();
-    console.log(`Successfully deleted ${snapshot.size} old rides.`);
+    console.log(`Deleted ${docs.length} old rides.`);
   }
 );
 
@@ -66,7 +70,7 @@ exports.notifyDriverOnRideRequest = onDocumentCreated(
   async (event) => {
     const request = event.data?.data();
     if (!request) {
-      console.error("Missing request data");
+      console.error("Missing ride_requests payload");
       return;
     }
 
@@ -85,7 +89,6 @@ exports.notifyDriverOnRideRequest = onDocumentCreated(
 
     const driverDoc = await db.collection("users").doc(driverUid).get();
     const fcmToken = driverDoc.data()?.fcmToken;
-
     if (!fcmToken) {
       console.warn(`No FCM token for driver UID: ${driverUid}`);
       return;
@@ -109,7 +112,16 @@ exports.notifyDriverOnRideRequest = onDocumentCreated(
       await admin.messaging().send(payload);
       console.log(`Notification sent to driver ${driverUid}`);
     } catch (error) {
-      console.error(`Error sending notification to driver ${driverUid}:`, error);
+      const code = error?.errorInfo?.code || error?.code || "";
+      // Clean up bad tokens
+      if (String(code).includes("registration-token-not-registered")) {
+        console.warn("Invalid FCM token — removing from Firestore.");
+        await db.collection("users").doc(driverUid).update({
+          fcmToken: admin.firestore.FieldValue.delete(),
+        });
+      } else {
+        console.error(`Error sending notification to driver ${driverUid}:`, error);
+      }
     }
   }
 );
@@ -122,17 +134,16 @@ exports.notifyDriverOnRideRequest = onDocumentCreated(
 exports.notifyRiderOnRideAccepted = onDocumentUpdated(
   { document: "rides/{rideId}" },
   async (event) => {
-    const before = event.data.before.data();
-    const after = event.data.after.data();
+    if (!event.data?.before || !event.data?.after) return;
 
-    const prevStatus = before?.status;
-    const nextStatus = after?.status;
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
 
-    if (prevStatus === nextStatus || nextStatus !== "accepted") {
-      return;
-    }
+    const prevStatus = before.status;
+    const nextStatus = after.status;
+    if (prevStatus === nextStatus || nextStatus !== "accepted") return;
 
-    const riderId = after?.riderId;
+    const riderId = after.riderId;
     if (!riderId) {
       console.error("No riderId found on ride.");
       return;
@@ -140,7 +151,6 @@ exports.notifyRiderOnRideAccepted = onDocumentUpdated(
 
     const riderDoc = await db.collection("users").doc(riderId).get();
     const fcmToken = riderDoc.data()?.fcmToken;
-
     if (!fcmToken) {
       console.warn(`No FCM token for rider UID: ${riderId}`);
       return;
@@ -162,7 +172,6 @@ exports.notifyRiderOnRideAccepted = onDocumentUpdated(
       await admin.messaging().send(payload);
       console.log(`Notification sent to rider ${riderId}`);
     } catch (error) {
-      // If token is invalid/expired, clean it up
       const code = error?.errorInfo?.code || error?.code || "";
       if (String(code).includes("registration-token-not-registered")) {
         console.warn("Invalid FCM token — removing from Firestore.");
@@ -181,11 +190,15 @@ exports.notifyRiderOnRideAccepted = onDocumentUpdated(
 // Called by the app after it signs in with email-link on a secondary Auth
 // ---------------------------------------------------------------------------
 exports.confirmByuiVerification = onCall(
-  { cors: true }, // allow cross-origin if you ever call from web
+  {
+    region: "us-central1",
+    // If you've enabled App Check, uncomment next line:
+    // enforceAppCheck: true,
+  },
   async (request) => {
-    // Primary user must be authenticated when calling
+    // Auth check for the primary session
     if (!request.auth) {
-      throw new Error(JSON.stringify({ code: "unauthenticated", message: "Sign in first." }));
+      throw new HttpsError("unauthenticated", "Sign in first.");
     }
 
     const primaryUid = request.auth.uid;
@@ -194,26 +207,26 @@ exports.confirmByuiVerification = onCall(
 
     const re = /^[a-zA-Z0-9._%+\-]+@byui\.edu$/;
     if (!re.test(byuiEmail)) {
-      throw new Error(JSON.stringify({ code: "invalid-argument", message: "Email must be @byui.edu" }));
+      throw new HttpsError("invalid-argument", "Email must be @byui.edu");
     }
     if (!secondaryIdToken) {
-      throw new Error(JSON.stringify({ code: "invalid-argument", message: "Missing token" }));
+      throw new HttpsError("invalid-argument", "Missing token");
     }
 
-    // Verify the secondary user's ID token
+    // Verify the secondary token (proof of inbox control)
     let decoded;
     try {
       decoded = await admin.auth().verifyIdToken(secondaryIdToken);
-    } catch (e) {
-      throw new Error(JSON.stringify({ code: "permission-denied", message: "Invalid secondary token" }));
+    } catch {
+      throw new HttpsError("permission-denied", "Invalid secondary token");
     }
 
-    const verifiedEmail = (decoded.email || "").toLowerCase();
+    const verifiedEmail = String(decoded.email || "").toLowerCase();
     if (verifiedEmail !== byuiEmail) {
-      throw new Error(JSON.stringify({ code: "permission-denied", message: "Email/token mismatch" }));
+      throw new HttpsError("permission-denied", "Email/token mismatch");
     }
 
-    // Mark verified on primary user's doc
+    // Mark verified in Firestore
     await db.collection("users").doc(primaryUid).set(
       {
         byuiEmail,
@@ -223,7 +236,7 @@ exports.confirmByuiVerification = onCall(
       { merge: true }
     );
 
-    // Merge custom claims with byuiVerified:true
+    // Add/merge custom claims
     const user = await admin.auth().getUser(primaryUid);
     const currentClaims = user.customClaims || {};
     await admin.auth().setCustomUserClaims(primaryUid, {
@@ -231,6 +244,7 @@ exports.confirmByuiVerification = onCall(
       byuiVerified: true,
     });
 
+    // Always return a structured payload
     return { ok: true };
   }
 );
