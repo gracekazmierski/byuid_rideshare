@@ -44,6 +44,8 @@ exports.deleteOldRides = onSchedule({
     const batch = db.batch();
     snapshot.docs.forEach(doc => {
       console.log(`Deleting ride: ${doc.id} (Date: ${doc.data().rideDate.toDate()})`);
+      const rideRef = db.collection("completed_rides").doc(doc.id);
+      batch.set(rideRef, doc.data());
       batch.delete(doc.ref);
     });
 

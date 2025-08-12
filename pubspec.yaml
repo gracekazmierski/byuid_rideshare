@@ -30,6 +30,7 @@ dependencies:
   google_sign_in: ^6.1.5
   image_picker: ^1.1.2
   mask_text_input_formatter: ^2.3.0 # For making the phone number appear with dashes
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:
