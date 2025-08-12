@@ -7,40 +7,24 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class PostedRequestService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static final CollectionReference _collection = _firestore.collection('ride_requests');
+  static final CollectionReference _collection = _firestore.collection(
+      'ride_requests');
   static final _auth = FirebaseAuth.instance;
 
-  static Stream<List<PostedRequest>> fetchRideRequests({
-    String fromLocation = '',
-    String toLocation = '',
-    RequestSortOption sortOption = RequestSortOption.newest,
-  }) {
+  static Stream<List<PostedRequest>> fetchRideRequests() {
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
 
-    Query query = _collection
+    // ✅ This query is now simpler and more reliable.
+    // It only gets active, non-expired requests. Sorting will be done in the app.
+    return _collection
         .where('status', isEqualTo: 'active')
-        .where('request_date_end', isGreaterThanOrEqualTo: today)
-        .orderBy('request_date_end', descending: false);
-
-    if (sortOption == RequestSortOption.newest) {
-      query = query.orderBy('created_at', descending: true);
-    } else {
-      query = query.orderBy('created_at', descending: false);
-    }
-
-    return query.snapshots().map((snapshot) {
-      var requests = snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList();
-
-      if (fromLocation.isNotEmpty) {
-        requests = requests.where((req) => req.fromLocation.toLowerCase().contains(fromLocation.toLowerCase())).toList();
-      }
-      if (toLocation.isNotEmpty) {
-        requests = requests.where((req) => req.toLocation.toLowerCase().contains(toLocation.toLowerCase())).toList();
-      }
-      return requests;
-    });
+        .where('request_date', isGreaterThanOrEqualTo: today)
+        .snapshots()
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList());
   }
+
   static Stream<List<PostedRequest>> fetchJoinedRideRequests() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -51,7 +35,8 @@ class PostedRequestService {
         .where('status', isEqualTo: 'active')
         .where('rider_uids', arrayContains: user.uid)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList());
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList());
   }
 
   static Future<void> leaveRideRequest(String requestId) async {
@@ -75,7 +60,8 @@ class PostedRequestService {
 
   static Future<void> joinRideRequest(String requestId) async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception("You must be logged in to join a request.");
+    if (user == null) throw Exception(
+        "You must be logged in to join a request.");
 
     final requestRef = _collection.doc(requestId);
     final newRider = {
@@ -90,7 +76,7 @@ class PostedRequestService {
     });
   }
 
-  static Future<void> fulfillRideRequest({
+  static Future<Ride> fulfillRideRequest({
     required String requestId,
     required DateTime exactDateTime,
     required int seats,
@@ -100,12 +86,12 @@ class PostedRequestService {
     required List<dynamic> initialRiders,
   }) async {
     final driver = _auth.currentUser;
-    if (driver == null) throw Exception("You must be logged in.");
+    if (driver == null) throw Exception(
+        "You must be logged in to offer a ride.");
 
     final rideOfferRef = _firestore.collection('rides').doc();
     final rideRequestRef = _collection.doc(requestId);
 
-    // This now correctly creates the Ride object based on your model
     final newRide = Ride(
       id: rideOfferRef.id,
       driverUid: driver.uid,
@@ -114,7 +100,6 @@ class PostedRequestService {
       destination: destination,
       rideDate: Timestamp.fromDate(exactDateTime),
       availableSeats: seats,
-      // Your model uses 'joinedUserUids', not 'passengers'
       joinedUserUids: [],
       fare: fare,
       postCreationTime: Timestamp.now(),
@@ -122,11 +107,12 @@ class PostedRequestService {
     );
 
     WriteBatch batch = _firestore.batch();
-
-    // ✅ FIX: Changed to use your model's toFirestore() method.
     batch.set(rideOfferRef, newRide.toFirestore());
     batch.delete(rideRequestRef);
 
     await batch.commit();
+
+    // ✅ RETURN the newRide object after it's been successfully created
+    return newRide;
   }
 }

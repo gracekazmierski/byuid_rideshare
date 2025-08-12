@@ -7,6 +7,7 @@ import '../models/ride.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/models/sort_option.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RideService {
   static final CollectionReference ridesCollection =
@@ -36,6 +37,31 @@ class RideService {
   static Future<void> cancelRide(String rideId) async {
     final rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
     await rideRef.delete();
+  }
+
+  static Future<void> leaveRide(String rideId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // This should not be reachable if the UI prevents non-logged-in users
+      // from seeing a "Leave" button, but it's a good safeguard.
+      throw Exception("You must be logged in to leave a ride.");
+    }
+
+    final rideRef = ridesCollection.doc(rideId);
+
+    try {
+      // This single update operation performs all necessary actions atomically
+      // and is designed to match the conditions in your `isJoiningOrLeavingRide` security rule.
+      await rideRef.update({
+        'joinedUserUids': FieldValue.arrayRemove([user.uid]),
+        'availableSeats': FieldValue.increment(1),
+        'isFull': false // A seat is now guaranteed to be available
+      });
+    } catch (e) {
+      print('Error leaving ride: $e');
+      // Re-throw the error so it can be caught and handled by the UI
+      rethrow;
+    }
   }
 
   // driver can remove passengers

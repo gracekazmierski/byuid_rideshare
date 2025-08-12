@@ -5,6 +5,7 @@ import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:byui_rideshare/services/user_service.dart';
+import 'package:byui_rideshare/screens/chat/ride_chat_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -28,12 +29,71 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     _currentUser = FirebaseAuth.instance.currentUser;
   }
 
-  // --- ACTION HANDLERS (Unchanged) ---
-  void _joinRide(String rideId) async {/*...*/}
-  void _acceptRequest(String requestId, String rideId, String riderUid) async {/*...*/}
-  void _denyRequest(String requestId) async {/*...*/}
-  void _removePassenger(String rideId, String passengerUid) async {/*...*/}
-  void _cancelRide(String rideId) async {/*...*/}
+  // ✅ ACTION HANDLERS - Now fully implemented
+
+  void _joinRide(String rideId) async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in to join.')));
+      return;
+    }
+    setState(() => _isProcessing = true);
+    try {
+      await RideService.requestToJoinRide(rideId, _currentUser!.uid, "");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride request sent!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  void _acceptRequest(String requestId, String rideId, String riderUid) async {
+    setState(() => _isProcessing = true);
+    try {
+      await RideService.acceptRideRequest(requestId, rideId, riderUid);
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request accepted.'), backgroundColor: Colors.green));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  void _denyRequest(String requestId) async {
+    try {
+      await RideService.denyRideRequest(requestId);
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request denied.')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    }
+  }
+
+  void _removePassenger(String rideId, String passengerUid) async {
+    try {
+      await RideService.removePassenger(rideId, passengerUid);
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passenger removed.')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    }
+  }
+
+  void _cancelRide(String rideId) async {
+    try {
+      await RideService.cancelRide(rideId);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride canceled.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+    }
+  }
 
   Future<void> _addRideToCalendar(Ride ride) async {
     if (!kIsWeb) {
@@ -103,11 +163,11 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
           backgroundColor: AppColors.gray50,
           appBar: _buildAppBar(context),
           body: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Stack(
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
             children: [
               ListView(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 120), // Increased bottom padding
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 160), // leave more space at the bottom for 2 buttons
                 children: [
                   _buildRouteCard(ride),
                   const SizedBox(height: 16),
@@ -119,10 +179,32 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   ],
                 ],
               ),
-              // ✅ The new bottom bar now includes the calendar button
-              _buildActionAndCalendarBar(ride, isDriver, hasJoined, rideIsFull),
+              if (isDriver || hasJoined)
+                Positioned(
+                  bottom: 80,
+                  left: 16,
+                  right: 16,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RideChatScreen(rideId: ride.id),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.byuiBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                    ),
+                    child: const Text("Open Ride Chat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              _buildActionButton(ride, isDriver, hasJoined, rideIsFull),
             ],
-          ),
+          )
         );
       },
     );
