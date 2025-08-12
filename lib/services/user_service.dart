@@ -1,7 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_profile.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
+import 'dart:typed_data'; // For Uint8List;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 class UserService {
   static final CollectionReference usersCollection =
@@ -10,22 +15,27 @@ class UserService {
   /// Saves or updates the user profile, including FCM token
   static Future<void> saveUserProfile(UserProfile profile) async {
     try {
-      // Get current FCM token
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken != null) {
-        print('FCM token retrieved: $fcmToken');
-        // Add token to profile data before saving
-        final data = profile.toFirestore();
-        data['fcmToken'] = fcmToken;
-        await usersCollection.doc(profile.uid).set(data);
+      if (!kIsWeb) {
+        // ✅ Only do this on non-web platforms
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          print('📡 FCM token retrieved: $fcmToken');
+          final data = profile.toFirestore();
+          data['fcmToken'] = fcmToken;
+          await usersCollection.doc(profile.uid).set(data);
+        } else {
+          print('⚠️ FCM token was null — skipping token save');
+          await usersCollection.doc(profile.uid).set(profile.toFirestore());
+        }
       } else {
-        print('FCM token was null — skipping token save');
+        // 🌐 Web: Skip FCM logic entirely
+        print('🌐 Web platform — skipping FCM logic');
         await usersCollection.doc(profile.uid).set(profile.toFirestore());
       }
 
-      print('User profile saved');
+      print('✅ User profile saved!');
     } catch (e) {
-      print('Failed to save user profile: $e');
+      print('❌ Failed to save user profile: $e');
     }
   }
 
@@ -90,6 +100,7 @@ class UserService {
     }
   }
 
+
   static Future<void> updateUserEmail(String newEmail) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -116,6 +127,45 @@ class UserService {
     }
   }
 
+  Future<String> uploadProfilePictureFromBytes(String uid, Uint8List imageBytes) async {
+    try {
+      print('⬆️ Uploading memory image to Firebase Storage...');
+      final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+
+      final uploadTask = ref.putData(
+        imageBytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      final snapshot = await uploadTask.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Upload timed out');
+        },
+      );
+
+      final url = await snapshot.ref.getDownloadURL();
+      print('✅ Upload complete: $url');
+      return url;
+    } catch (e) {
+      print('❌ Failed to upload profile picture from bytes: $e');
+      rethrow;
+    }
+  }
+
+
+  Future<String?> uploadProfilePicture(String uid, File imageFile) async {
+    try {
+      final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+      await ref.putFile(imageFile);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print('Failed to upload profile picture: $e');
+      return null;
+    }
+  }
+
+
   /// Returns the full name (or first name only) for a given UID
   static Future<String?> getUserName(String uid) async {
     try {
@@ -140,4 +190,32 @@ void testProfileSave() async {
 
   UserProfile? fetched = await UserService.fetchUserProfile('abc123');
   print('Name: ${fetched?.firstName} ${fetched?.lastName}');
+}
+
+Future<String?> uploadProfilePicture(String uid, File imageFile) async {
+  try {
+    print('⬆️ Uploading file to Firebase Storage...');
+    final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+    await ref.putFile(imageFile);
+    final url = await ref.getDownloadURL();
+    print('✅ Upload complete: $url');
+    return url;
+  } catch (e) {
+    print('❌ Failed to upload profile picture: $e');
+    return null;
+  }
+}
+
+Future<String> uploadProfilePictureFromBytes(String uid, Uint8List imageBytes) async {
+  try {
+    print('⬆️ Uploading memory image to Firebase Storage...');
+    final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+    await ref.putData(imageBytes, SettableMetadata(contentType: 'image/jpeg'));
+    final url = await ref.getDownloadURL();
+    print('✅ Upload complete: $url');
+    return url;
+  } catch (e) {
+    print('❌ Failed to upload profile picture from bytes: $e');
+    rethrow;
+  }
 }
