@@ -1,164 +1,257 @@
 // functions/index.js
 
-// --- CHANGE 1: Import onSchedule from v2 scheduler ---
+// -------------------------------
+// Firebase Functions v2 imports
+// -------------------------------
+const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const admin = require('firebase-admin');
-const functions = require("firebase-functions");
+const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-// Note: These v2 imports are not used but are good to have for future v2 functions
-// const { initializeApp } = require("firebase-admin/app");
-// const { getFirestore } = require("firebase-admin/firestore");
-// const { getMessaging } = require("firebase-admin/messaging");
+// -------------------------------
+// Admin SDK
+// -------------------------------
+const admin = require("firebase-admin");
 
-// Initialize Firebase Admin SDK if not already initialized
+// Initialize Admin once
 if (!admin.apps.length) {
   admin.initializeApp();
 }
-
 const db = admin.firestore();
 
-// Scheduled function to delete old rides
-// This function will run every day at 3:00 AM America/Denver time (MDT)
-// --- CHANGE 2: Use onSchedule directly with an options object ---
-exports.deleteOldRides = onSchedule({
-    schedule: '0 3 * * *',
-    timeZone: 'America/Denver' // MDT
-}, async (event) => {
-    const now = admin.firestore.Timestamp.now();
-
-    console.log('Running deleteOldRides scheduled function at:', now.toDate());
-
-    // Query for rides where rideDate is in the past
-    const oldRidesQuery = db.collection('rides')
-                              .where('rideDate', '<', now);
-
-    const snapshot = await oldRidesQuery.get();
-
-    if (snapshot.empty) {
-      console.log('No old rides to delete found.');
-      return null;
-    }
-
-    // Use a batch to delete multiple documents efficiently
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => {
-      console.log(`Deleting ride: ${doc.id} (Date: ${doc.data().rideDate.toDate()})`);
-      const rideRef = db.collection("completed_rides").doc(doc.id);
-      batch.set(rideRef, doc.data());
-      batch.delete(doc.ref);
-    });
-
-    try {
-      await batch.commit();
-      console.log(`Successfully deleted ${snapshot.size} old rides.`);
-      return null;
-    } catch (error) {
-      console.error('Error deleting old rides:', error);
-      // --- CHANGE 3: Simpler error rethrow for v2 ---
-      throw error;
-    }
+// -------------------------------
+// Global defaults for v2 functions
+// -------------------------------
+setGlobalOptions({
+  region: "us-central1",
+  timeoutSeconds: 60,
+  memory: "256MiB",
+  // If App Check is enabled, set enforceAppCheck: true per-function below.
 });
 
+// ---------------------------------------------------------------------------
+// Scheduled cleanup: delete old rides (runs 3:00 AM America/Denver daily)
+// - Archives to completed_rides then deletes, in safe chunked batches.
+// - Batch limit is 500 writes; set+delete = 2 writes per doc -> chunk <= 250.
+// ---------------------------------------------------------------------------
+exports.deleteOldRides = onSchedule(
+  {
+    schedule: "0 3 * * *",
+    timeZone: "America/Denver",
+  },
+  async () => {
+    const now = admin.firestore.Timestamp.now();
+    console.log("Running deleteOldRides at:", now.toDate());
 
-// Firestore Trigger: Notify driver when new ride request is created
-exports.notifyDriverOnRideRequest = onDocumentCreated(
-  "ride_requests/{requestId}",
-  async (event) => {
-    const request = event.data?.data();
-
-    if (!request) {
-      console.error("Missing request data");
+    const snap = await db.collection("rides").where("rideDate", "<", now).get();
+    if (snap.empty) {
+      console.log("No old rides to delete.");
       return;
     }
 
-    const { driverUid, riderUid, rideId, message = "", riderName = "A rider" } = request;
+    const docs = snap.docs;
+    const chunkSize = 200; // Leave headroom under 250 (set+delete per doc)
+
+    let processed = 0;
+    for (let i = 0; i < docs.length; i += chunkSize) {
+      const chunk = docs.slice(i, i + chunkSize);
+      const batch = db.batch();
+
+      chunk.forEach((doc) => {
+        const data = doc.data();
+        const archiveRef = db.collection("completed_rides").doc(doc.id);
+        batch.set(archiveRef, data);   // 1 write
+        batch.delete(doc.ref);         // +1 write
+      });
+
+      await batch.commit();
+      processed += chunk.length;
+      console.log(`Archived+deleted chunk: ${chunk.length} (total ${processed}/${docs.length})`);
+    }
+
+    console.log(`Completed cleanup. Total archived+deleted: ${docs.length}.`);
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Firestore (Created): notify driver when a new ride request is created
+// Path: ride_requests/{requestId}
+// ---------------------------------------------------------------------------
+exports.notifyDriverOnRideRequest = onDocumentCreated(
+  { document: "ride_requests/{requestId}" },
+  async (event) => {
+    const request = event.data?.data();
+    if (!request) {
+      console.error("Missing ride_requests payload");
+      return;
+    }
+
+    const {
+      driverUid,
+      riderUid,
+      rideId,
+      message = "",
+      riderName = "A rider",
+    } = request;
+
+    if (!driverUid) {
+      console.warn("ride_requests doc missing driverUid");
+      return;
+    }
 
     const driverDoc = await db.collection("users").doc(driverUid).get();
     const fcmToken = driverDoc.data()?.fcmToken;
-
     if (!fcmToken) {
       console.warn(`No FCM token for driver UID: ${driverUid}`);
       return;
     }
 
     const payload = {
+      token: fcmToken,
       notification: {
         title: "New Ride Request",
         body: `${riderName} has requested to join your ride.`,
       },
       data: {
-        rideId,
-        riderUid,
+        rideId: String(rideId || ""),
+        riderUid: String(riderUid || ""),
         type: "ride_request",
+        message: String(message || ""),
       },
     };
 
-    // MERGE CONFLICT WAS RESOLVED HERE by removing the markers and keeping one newline.
-
     try {
-      // The send() method is a good modern choice for sending to a single token.
-      await admin.messaging().send({
-        token: fcmToken,
-        ...payload,
-      });
+      await admin.messaging().send(payload);
       console.log(`Notification sent to driver ${driverUid}`);
     } catch (error) {
-      console.error(`Error sending notification to driver ${driverUid}:`, error);
+      const code = error?.errorInfo?.code || error?.code || "";
+      // Clean up bad tokens
+      if (String(code).includes("registration-token-not-registered")) {
+        console.warn("Invalid FCM token — removing from Firestore.");
+        await db.collection("users").doc(driverUid).update({
+          fcmToken: admin.firestore.FieldValue.delete(),
+        });
+      } else {
+        console.error(`Error sending notification to driver ${driverUid}:`, error);
+      }
     }
-    // Note: This log statement might be redundant as it's also in the try block.
-    // console.log(`Notification sent to driver ${driverUid}`);
   }
 );
 
-// Firestore Trigger: Notify rider when ride is accepted (v1 Function)
-exports.notifyRiderOnRideAccepted = functions
-  .region("us-central1")
-  .runWith({ memory: "256MB", timeoutSeconds: 60 }) // optional tuning
-  .firestore.document("rides/{rideId}")
-  .onUpdate(async (change, context) => {
-    const before = change.before.data();
-    const after = change.after.data();
+// ---------------------------------------------------------------------------
+// Firestore (Updated): notify rider when a ride is accepted
+// Path: rides/{rideId}
+// Triggers only when status changes to 'accepted'
+// ---------------------------------------------------------------------------
+exports.notifyRiderOnRideAccepted = onDocumentUpdated(
+  { document: "rides/{rideId}" },
+  async (event) => {
+    if (!event.data?.before || !event.data?.after) return;
 
-    if (before.status === after.status || after.status !== "accepted") return null;
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+
+    const prevStatus = before.status;
+    const nextStatus = after.status;
+    if (prevStatus === nextStatus || nextStatus !== "accepted") return;
 
     const riderId = after.riderId;
-    if (!riderId) return console.error("No riderId found on ride.");
+    if (!riderId) {
+      console.error("No riderId found on ride.");
+      return;
+    }
 
     const riderDoc = await db.collection("users").doc(riderId).get();
-    const fcmToken = riderDoc.get("fcmToken");
-
+    const fcmToken = riderDoc.data()?.fcmToken;
     if (!fcmToken) {
       console.warn(`No FCM token for rider UID: ${riderId}`);
-      return null;
+      return;
     }
 
     const payload = {
+      token: fcmToken,
       notification: {
         title: "Ride Accepted",
         body: "A driver has accepted your ride request. 🎉",
       },
       data: {
-        rideId: context.params.rideId,
+        rideId: String(event.params.rideId || ""),
         type: "rideAccepted",
       },
     };
 
     try {
-      const response = await admin.messaging().sendToDevice(fcmToken, payload);
-      const result = response.results[0];
-
-      if (result.error?.code === "messaging/registration-token-not-registered") {
+      await admin.messaging().send(payload);
+      console.log(`Notification sent to rider ${riderId}`);
+    } catch (error) {
+      const code = error?.errorInfo?.code || error?.code || "";
+      if (String(code).includes("registration-token-not-registered")) {
         console.warn("Invalid FCM token — removing from Firestore.");
         await db.collection("users").doc(riderId).update({
           fcmToken: admin.firestore.FieldValue.delete(),
         });
+      } else {
+        console.error(`Error sending notification to rider ${riderId}:`, error);
       }
+    }
+  }
+);
 
-      console.log(`Notification sent to rider ${riderId}`);
-    } catch (error) {
-      console.error(`Error sending notification to rider ${riderId}:`, error);
+// ---------------------------------------------------------------------------
+// HTTPS Callable (v2): confirm BYUI verification using secondary ID token
+// Called by the app after it signs in with email-link on a secondary Auth
+// ---------------------------------------------------------------------------
+exports.confirmByuiVerification = onCall(
+  {
+    region: "us-central1",
+    // If App Check is enabled, uncomment:
+    // enforceAppCheck: true,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in first.");
     }
 
-    return null;
-  });
+    const primaryUid = request.auth.uid;
+    const byuiEmail = String(request.data?.byuiEmail || "").trim().toLowerCase();
+    const secondaryIdToken = String(request.data?.secondaryIdToken || "").trim();
+
+    const re = /^[a-zA-Z0-9._%+\-]+@byui\.edu$/;
+    if (!re.test(byuiEmail)) {
+      throw new HttpsError("invalid-argument", "Email must be @byui.edu");
+    }
+    if (!secondaryIdToken) {
+      throw new HttpsError("invalid-argument", "Missing token");
+    }
+
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(secondaryIdToken);
+    } catch {
+      throw new HttpsError("permission-denied", "Invalid secondary token");
+    }
+
+    const verifiedEmail = String(decoded.email || "").toLowerCase();
+    if (verifiedEmail !== byuiEmail) {
+      throw new HttpsError("permission-denied", "Email/token mismatch");
+    }
+
+    await db.collection("users").doc(primaryUid).set(
+      {
+        byuiEmail,
+        byuiEmailVerified: true,
+        byuiEmailVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    const user = await admin.auth().getUser(primaryUid);
+    const currentClaims = user.customClaims || {};
+    await admin.auth().setCustomUserClaims(primaryUid, {
+      ...currentClaims,
+      byuiVerified: true,
+    });
+
+    return { ok: true };
+  }
+);

@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/foundation.dart';
 
 class UserService {
+  static final _db = FirebaseFirestore.instance;
   static final CollectionReference usersCollection =
   FirebaseFirestore.instance.collection('users');
 
@@ -100,7 +101,6 @@ class UserService {
     }
   }
 
-
   static Future<void> updateUserEmail(String newEmail) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -125,6 +125,18 @@ class UserService {
       print('Error updating password: $e');
       rethrow;
     }
+  }
+
+  static Future<void> updateByuiEmail(String uid, String email) async {
+    await _db.collection('users').doc(uid).set({
+      'byuiEmail': email,
+      'byuiEmailVerified': false,
+    }, SetOptions(merge: true));
+  }
+
+  static Future<Map<String, dynamic>?> fetchByuiStatus(String uid) async {
+    final snap = await _db.collection('users').doc(uid).get();
+    return snap.data();
   }
 
   Future<String> uploadProfilePictureFromBytes(String uid, Uint8List imageBytes) async {
