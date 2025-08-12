@@ -26,12 +26,13 @@ setGlobalOptions({
   region: "us-central1",
   timeoutSeconds: 60,
   memory: "256MiB",
-  // If you enable App Check, you can set enforceAppCheck: true at function-level below.
+  // If App Check is enabled, set enforceAppCheck: true per-function below.
 });
 
 // ---------------------------------------------------------------------------
 // Scheduled cleanup: delete old rides (runs 3:00 AM America/Denver daily)
-// - Uses chunked batch deletes to stay under Firestore batch limits.
+// - Archives to completed_rides then deletes, in safe chunked batches.
+// - Batch limit is 500 writes; set+delete = 2 writes per doc -> chunk <= 250.
 // ---------------------------------------------------------------------------
 exports.deleteOldRides = onSchedule(
   {
@@ -49,15 +50,26 @@ exports.deleteOldRides = onSchedule(
     }
 
     const docs = snap.docs;
-    // Chunk at <= 450 to leave headroom
-    for (let i = 0; i < docs.length; i += 450) {
-      const chunk = docs.slice(i, i + 450);
+    const chunkSize = 200; // Leave headroom under 250 (set+delete per doc)
+
+    let processed = 0;
+    for (let i = 0; i < docs.length; i += chunkSize) {
+      const chunk = docs.slice(i, i + chunkSize);
       const batch = db.batch();
-      chunk.forEach((doc) => batch.delete(doc.ref));
+
+      chunk.forEach((doc) => {
+        const data = doc.data();
+        const archiveRef = db.collection("completed_rides").doc(doc.id);
+        batch.set(archiveRef, data);   // 1 write
+        batch.delete(doc.ref);         // +1 write
+      });
+
       await batch.commit();
+      processed += chunk.length;
+      console.log(`Archived+deleted chunk: ${chunk.length} (total ${processed}/${docs.length})`);
     }
 
-    console.log(`Deleted ${docs.length} old rides.`);
+    console.log(`Completed cleanup. Total archived+deleted: ${docs.length}.`);
   }
 );
 
@@ -192,11 +204,10 @@ exports.notifyRiderOnRideAccepted = onDocumentUpdated(
 exports.confirmByuiVerification = onCall(
   {
     region: "us-central1",
-    // If you've enabled App Check, uncomment next line:
+    // If App Check is enabled, uncomment:
     // enforceAppCheck: true,
   },
   async (request) => {
-    // Auth check for the primary session
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Sign in first.");
     }
@@ -213,7 +224,6 @@ exports.confirmByuiVerification = onCall(
       throw new HttpsError("invalid-argument", "Missing token");
     }
 
-    // Verify the secondary token (proof of inbox control)
     let decoded;
     try {
       decoded = await admin.auth().verifyIdToken(secondaryIdToken);
@@ -226,7 +236,6 @@ exports.confirmByuiVerification = onCall(
       throw new HttpsError("permission-denied", "Email/token mismatch");
     }
 
-    // Mark verified in Firestore
     await db.collection("users").doc(primaryUid).set(
       {
         byuiEmail,
@@ -236,7 +245,6 @@ exports.confirmByuiVerification = onCall(
       { merge: true }
     );
 
-    // Add/merge custom claims
     const user = await admin.auth().getUser(primaryUid);
     const currentClaims = user.customClaims || {};
     await admin.auth().setCustomUserClaims(primaryUid, {
@@ -244,7 +252,6 @@ exports.confirmByuiVerification = onCall(
       byuiVerified: true,
     });
 
-    // Always return a structured payload
     return { ok: true };
   }
 );

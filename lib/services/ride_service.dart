@@ -6,6 +6,7 @@ import '../models/ride.dart';
 // import 'package:byui_rideshare/screens/rides/driver_requests_screen.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/models/sort_option.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RideService {
@@ -84,6 +85,26 @@ class RideService {
         'isFull': isFull,
       });
     });
+  }
+
+  static Stream<List<Ride>> fetchRideHistory(String userId) {
+    final firestore = FirebaseFirestore.instance;
+    final completed = firestore.collection('completed_rides');
+    final driverQuery = completed.where('driverUid', isEqualTo: userId).orderBy('rideDate', descending: true).snapshots();
+    final riderQuery = completed.where('joinedUserUids', arrayContains: userId).orderBy('rideDate', descending: true).snapshots();
+
+    return Rx.combineLatest2(
+      driverQuery,
+      riderQuery,
+        (QuerySnapshot driverSnap, QuerySnapshot riderSnap) {
+          final allDocs = [...driverSnap.docs, ...riderSnap.docs];
+          final seen = <String>{}; // used to avoid duplication/duplicates
+          final rides = allDocs.where((doc) => seen.add(doc.id)).map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>)).toList();
+
+          rides.sort((a, b) => b.rideDate.compareTo(a.rideDate));
+          return rides;
+        },
+    );
   }
 
   /// Fetches a stream of ride listings ordered by rideDate.
