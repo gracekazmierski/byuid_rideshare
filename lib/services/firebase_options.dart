@@ -44,7 +44,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '527415309529',
     projectId: 'byuirideshare',
     authDomain: 'byuirideshare.firebaseapp.com',
-    storageBucket: 'byuirideshare.firebasestorage.app',
+    storageBucket: 'byuirideshare.appspot.com',
     measurementId: 'G-HNGZLVJRVS',
   );
   static const FirebaseOptions android = FirebaseOptions(
@@ -52,14 +52,14 @@ class DefaultFirebaseOptions {
     appId: '1:527415309529:android:96908e26b8b7111034bac8',
     messagingSenderId: '527415309529',
     projectId: 'byuirideshare',
-    storageBucket: 'byuirideshare.firebasestorage.app',
+    storageBucket: 'byuirideshare.appspot.com,'
   );
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA0bbVfb0mKRTcIf1oSotu0T-UWXo9zWHw',
     appId: '1:527415309529:ios:e564e648b5912cc034bac8',
     messagingSenderId: '527415309529',
     projectId: 'byuirideshare',
-    storageBucket: 'byuirideshare.firebasestorage.app',
+    storageBucket: 'byuirideshare.appspot.com',
     iosBundleId: 'com.example.byuiRideshare',
   );
   static const FirebaseOptions macos = FirebaseOptions(
@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     appId: '1:527415309529:ios:e564e648b5912cc034bac8',
     messagingSenderId: '527415309529',
     projectId: 'byuirideshare',
-    storageBucket: 'byuirideshare.firebasestorage.app',
+    storageBucket: 'byuirideshare.appspot.com',
     iosBundleId: 'com.example.byuiRideshare',
   );
   static const FirebaseOptions windows = FirebaseOptions(
@@ -76,7 +76,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '527415309529',
     projectId: 'byuirideshare',
     authDomain: 'byuirideshare.firebaseapp.com',
-    storageBucket: 'byuirideshare.firebasestorage.app',
+    storageBucket: 'byuirideshare.appspot.com',
     measurementId: 'G-PTW5KD97RM',
   );
 }
