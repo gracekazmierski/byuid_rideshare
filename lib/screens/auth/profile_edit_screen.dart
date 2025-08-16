@@ -189,15 +189,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     String? profileUrl;
     try {
       if (_selectedImage != null) {
-        debugPrint('📷 Uploading File image...');
         profileUrl = await UserService().uploadProfilePicture(currentUser.uid, _selectedImage!);
       } else if (_selectedImageBytes != null) {
-        debugPrint('🧠 Uploading memory image...');
         profileUrl =
         await UserService().uploadProfilePictureFromBytes(currentUser.uid, _selectedImageBytes!);
       }
 
-      debugPrint('🧱 Constructing user profile');
       final userProfile = UserProfile(
         uid: currentUser.uid,
         firstName: _firstNameController.text.trim(),
@@ -213,14 +210,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         profilePictureUrl: profileUrl ?? _loadedProfile?.profilePictureUrl,
       );
 
-      debugPrint('💾 Saving profile to Firestore...');
       await UserService.saveUserProfile(userProfile);
-      debugPrint('✅ Profile saved');
 
       await currentUser.updateDisplayName('${userProfile.firstName} ${userProfile.lastName}'.trim());
 
       if (mounted) {
-        debugPrint('🔁 Navigating to RideListScreen');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
         );
@@ -230,7 +224,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error in saveChanges: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save profile: $e')),
@@ -239,7 +232,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
-        debugPrint('✅ Saving flag reset');
       }
     }
   }

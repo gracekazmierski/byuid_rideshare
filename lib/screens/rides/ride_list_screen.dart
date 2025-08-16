@@ -1,5 +1,5 @@
 // lib/screens/rides/ride_list_screen.dart
-
+import 'package:byui_rideshare/screens/profile/profile_chip.dart';
 import 'package:byui_rideshare/screens/rides/ride_request_list_screen.dart';
 import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_request_screen.dart';
@@ -477,8 +477,6 @@ class _RideOffersListState extends State<RideOffersList> {
                 Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()), style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
               ]),
               const SizedBox(height: 12),
-
-              // ✅ THIS IS THE CORRECTED ROW
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -490,36 +488,11 @@ class _RideOffersListState extends State<RideOffersList> {
                   ]),
 
                   // This FutureBuilder now correctly handles layout
-                  FutureBuilder<String?>(
-                    future: UserService.getUserName(ride.driverUid),
-                    builder: (context, snapshot) {
-                      final name = snapshot.data ?? "Unknown Driver";
-                      String initials = name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').join().toUpperCase();
-                      if (initials.length > 2) initials = initials.substring(0, 2);
-                      if (initials.isEmpty) initials = '?';
-
-                      return Row(
-                        mainAxisSize: MainAxisSize.min, // Important for Flexible to work
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: const Color(0xFFe6f1fa),
-                            child: Text(initials, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.byuiBlue)),
-                          ),
-                          const SizedBox(width: 4),
-                          // Flexible now wraps only the Text, allowing it to truncate
-                          // without breaking the parent Row's alignment.
-                          Flexible(
-                            child: Text(
-                              name,
-                              style: const TextStyle(fontSize: 12, color: AppColors.textGray500),
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                  ProfileChip(
+                    userId: ride.driverUid,
+                    dense: true,          // matches your 12px avatar style
+                    showName: true,       // keep the name visible
+                    maxNameWidth: 120,    // truncates nicely in tight cards
                   ),
                 ],
               ),
@@ -557,7 +530,6 @@ class _RideOffersListState extends State<RideOffersList> {
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
-              // ✅ SAFER CHECK: This prevents the crash by checking for null explicitly.
               if (!snapshot.hasData || snapshot.data == null ||
                   snapshot.data!.isEmpty) {
                 return const Center(child: Text('No rides currently offered.'));
