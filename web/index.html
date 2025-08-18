@@ -1,19 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
@@ -32,30 +19,14 @@
   <title>byui_rideshare</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- IMPORTANT: Firebase SDK and Configuration for Web -->
-  <!-- Load Firebase SDKs -->
-  <!-- Use a specific major version (e.g., 9) and let Firebase handle minor updates, or specify exact minor versions -->
+  <!-- Firebase SDKs (optional for FlutterFire; keep if you’ve been using them) -->
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics-compat.js"></script>
-  <!-- Also include other Firebase SDKs you use in your app, like Auth and Firestore -->
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
-  <!-- IMPORTANT: Replace '9.x.x' with the actual major version you intend to use or that Firebase Console suggests.
-       You often don't need the 'compat' version if using modular SDK, but it's safer for FlutterFire to use them
-       if that's what your setup expects. Firebase Console usually suggests the modular imports.
-       If your console showed:
-       import { initializeApp } from "firebase/app";
-       import { getAnalytics } from "firebase/analytics";
-       Then you might need the non-compat versions:
-       <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
-       <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics.js"></script>
-       But for compatibility with FlutterFire, stick with what typically works, which is often `compat`.
-       If issues persist, try swapping `compat.js` for `.js` for all your Firebase scripts.
-  -->
 
   <script>
-    // Your web app's Firebase configuration
-    // This is copied directly from your Firebase Console
+    // Your Firebase config (FlutterFire still initializes in Dart)
     var firebaseConfig = {
       apiKey: "AIzaSyBjx-4rPklg6MgDjKEfyRXmWMjzUhRanHc",
       authDomain: "byuirideshare.firebaseapp.com",
@@ -65,15 +36,48 @@
       appId: "1:527415309529:web:7ecf2a44100fefdd34bac8",
       measurementId: "G-HNGZLVJRVS"
     };
-
-    // DO NOT add firebase.initializeApp(firebaseConfig); here.
-    // The FlutterFire plugins (in your Dart code) handle this initialization automatically
-    // when you call Firebase.initializeApp() in main.dart.
   </script>
-  <!-- END Firebase SDK and Configuration for Web -->
-
 </head>
 <body>
+
+<!-- 🔧 Redirect helper for Firebase email-action links -->
+<script>
+  (function () {
+    try {
+      // Detect email-action params in query or hash
+      var hasQuery = /[?&]oobCode=/.test(location.search) && /[?&]mode=/.test(location.search);
+      var hasHash  = /[?&]oobCode=/.test(location.hash)   && /[?&]mode=/.test(location.hash);
+      if (!(hasQuery || hasHash)) return;
+
+      // Extract the query string (?oobCode=...&mode=...)
+      var qs = '';
+      if (hasQuery) {
+        qs = location.search;
+      } else {
+        var m = location.hash.match(/\?(.*)$/);
+        if (m && m[1]) qs = '?' + m[1];
+      }
+
+      // Respect base href in case we’re hosted under a subpath
+      var baseEl = document.querySelector('base');
+      var baseHref = baseEl ? baseEl.getAttribute('href') || '/' : '/';
+      if (!baseHref.endsWith('/')) baseHref += '/';
+
+      // Force SPA route so the Flutter screen can handle verification
+      var target = location.origin + baseHref + '#/byui-verify' + qs;
+
+      // Avoid loops if already on the route with same params
+      var alreadyOnVerify = location.hash.startsWith('#/byui-verify') && (location.search === '' || location.search === qs);
+      if (!alreadyOnVerify) {
+        location.replace(target);
+      }
+    } catch (e) {
+      console && console.warn && console.warn('EAH redirect helper failed', e);
+    }
+  })();
+</script>
+
+<!-- Flutter bootstrap -->
 <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
