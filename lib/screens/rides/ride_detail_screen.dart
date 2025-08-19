@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:byui_rideshare/models/ride.dart';
 import 'package:byui_rideshare/models/ride_request.dart';
 import 'package:byui_rideshare/services/ride_service.dart';
-// import 'package:byui_rideshare/services/user_service.dart'; // not needed with ProfileChip
 import 'package:byui_rideshare/screens/chat/ride_chat_screen.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
@@ -224,7 +223,12 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => RideChatScreen(rideId: ride.id)),
+            MaterialPageRoute(
+              builder: (_) => RideChatScreen(
+                rideId: ride.id,
+                rideTitle: "${ride.origin} → ${ride.destination}",
+              ),
+            ),
           );
         },
         style: ElevatedButton.styleFrom(
@@ -375,7 +379,12 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => RideChatScreen(rideId: ride.id)),
+                      MaterialPageRoute(
+                        builder: (_) => RideChatScreen(
+                          rideId: ride.id,
+                          rideTitle: "${ride.origin} → ${ride.destination}", // ✅ pass title here
+                        ),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.byuiBlue),

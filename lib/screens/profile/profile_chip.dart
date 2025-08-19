@@ -1,7 +1,7 @@
 // lib/widgets/profile/profile_chip.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:byui_rideshare/screens/profile/profile_view_screen.dart';
 
@@ -172,7 +172,6 @@ class _Avatar extends StatelessWidget {
 }
 
 final Map<String, UserLite> _userLiteCache = {};
-
 Future<UserLite> _getUserLite(String uid) async {
   // Cache to avoid repeated reads in lists
   final cached = _userLiteCache[uid];
@@ -192,7 +191,8 @@ Future<UserLite> _getUserLite(String uid) async {
     } catch (_) {/* ignore and try next */}
   }
 
-  String name = 'User';
+  // Default fallbacks
+  String name = '';
   String? photoUrl;
   bool byuiVerified = false;
 
@@ -200,6 +200,7 @@ Future<UserLite> _getUserLite(String uid) async {
     final fn = (data['firstName'] ?? data['first_name'] ?? '').toString().trim();
     final ln = (data['lastName'] ?? data['last_name'] ?? '').toString().trim();
     final display = (data['displayName'] ?? data['name'] ?? '').toString().trim();
+
     if (display.isNotEmpty) {
       name = display;
     } else if (fn.isNotEmpty || ln.isNotEmpty) {
@@ -207,6 +208,8 @@ Future<UserLite> _getUserLite(String uid) async {
     }
 
     photoUrl = (data['photoUrl'] ?? data['photo_url'] ?? data['avatarUrl'])?.toString();
+
+    // ✅ BYUI verification check (unchanged)
     final explicit =
         (data['byuiVerified'] as bool?) ??
             (data['byui_verified'] as bool?) ??
@@ -234,7 +237,24 @@ Future<UserLite> _getUserLite(String uid) async {
         (data['byuiVerifiedAt'] is Timestamp);
   }
 
+  // ✅ Final fallback: check FirebaseAuth user record
+  if (name.isEmpty) {
+    try {
+      final authUser = FirebaseAuth.instance.currentUser;
+      if (authUser != null && authUser.uid == uid) {
+        name = authUser.displayName ?? authUser.email ?? 'Unknown User';
+        photoUrl = photoUrl ?? authUser.photoURL;
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  // If still nothing, default to "Unknown User"
+  if (name.isEmpty) name = 'Unknown User';
+
   final userLite = UserLite(uid: uid, name: name, photoUrl: photoUrl, byuiVerified: byuiVerified);
   _userLiteCache[uid] = userLite;
   return userLite;
 }
+

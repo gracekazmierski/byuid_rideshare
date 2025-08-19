@@ -112,7 +112,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Create Account', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
-                      Text('Join BYUI Rideshare', style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                      Text('Join RexRide', style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
                     ],
                   ),
                 ],

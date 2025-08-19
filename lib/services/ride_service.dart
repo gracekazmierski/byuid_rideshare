@@ -218,6 +218,25 @@ class RideService {
     });
   }
 
+  static Stream<List<Ride>> fetchAllUserRides(String uid) {
+    final joinedStream = fetchJoinedRideListings(uid);
+    final driverStream = fetchDriverRideListings(uid);
+
+    return Rx.combineLatest2<List<Ride>, List<Ride>, List<Ride>>(
+      joinedStream,
+      driverStream,
+          (joined, driver) {
+        final all = [...joined, ...driver];
+        final seen = <String>{};
+        final unique = all.where((r) => seen.add(r.id)).toList();
+
+        // Optional: sort by date
+        unique.sort((a, b) => a.rideDate.compareTo(b.rideDate));
+        return unique;
+      },
+    );
+  }
+
   /// Fetches a stream for a single ride by its ID for real-time updates.
   static Stream<Ride> getRideStream(String rideId) {
     return ridesCollection.doc(rideId).snapshots().map((doc) {

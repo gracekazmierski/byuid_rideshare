@@ -71,7 +71,7 @@ class MyJoinedRidesScreen extends StatelessWidget {
             child: Text('Joined Rides', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
           ),
           StreamBuilder<List<Ride>>(
-            stream: RideService.fetchJoinedRideListings(currentUser.uid),
+            stream: RideService.fetchAllUserRides(currentUser.uid),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
 
@@ -86,14 +86,14 @@ class MyJoinedRidesScreen extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       itemCount: rides.length,
-                      itemBuilder: (context, index) => _buildRideCard(context, rides[index]),
+                      itemBuilder: (context, index) =>
+                          _buildRideCard(context, rides[index], currentUser.uid),
                     ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // ✨ CHANGED to ElevatedButton.icon
                         ElevatedButton.icon(
                           icon: const Icon(Icons.search),
                           label: const Text('Search for a ride'),
@@ -165,7 +165,7 @@ class MyJoinedRidesScreen extends StatelessWidget {
   }
 
   // This card for confirmed rides includes details from both branches.
-  Widget _buildRideCard(BuildContext context, Ride ride) {
+  Widget _buildRideCard(BuildContext context, Ride ride, String currentUid) {
     final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
 
     return Card(
@@ -220,6 +220,23 @@ class MyJoinedRidesScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (ride.driverUid == currentUid)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.byuiBlue,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Driver',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                   IconButton(
                     icon: const Icon(Icons.calendar_today_outlined),
                     tooltip: 'Add to Calendar',
@@ -228,8 +245,17 @@ class MyJoinedRidesScreen extends StatelessWidget {
                   if (isRideFull)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                      child: const Text('Full', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                      decoration: BoxDecoration(
+                          color: AppColors.red500,
+                          borderRadius: BorderRadius.circular(4)),
+                      child: const Text(
+                        'Full',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                 ],
               ),

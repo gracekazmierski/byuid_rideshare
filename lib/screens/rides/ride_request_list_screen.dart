@@ -5,11 +5,10 @@ import 'package:byui_rideshare/screens/rides/posted_request_detail_screen.dart';
 import 'package:byui_rideshare/services/posted_request_service.dart';
 import 'package:byui_rideshare/services/user_service.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:byui_rideshare/screens/profile/profile_chip.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:byui_rideshare/models/request_sort_option.dart';
 import 'package:byui_rideshare/screens/rides/join_request_confirmation_screen.dart';
 
 class RideRequestListScreen extends StatefulWidget {
@@ -417,19 +416,10 @@ class _RideRequestCardState extends State<RideRequestCard> {
                     const SizedBox(width: 8),
                     Text('$riderCount Rider${riderCount != 1 ? "s" : ""}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
                   ]),
-                  FutureBuilder<String?>(
-                    future: UserService.getUserName(widget.request.requesterUid),
-                    builder: (context, snapshot) {
-                      final name = snapshot.data ?? "Loading...";
-                      String initials = name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').join().toUpperCase();
-                      if (initials.length > 2) initials = initials.substring(0, 2);
-                      if (initials.isEmpty) initials = '?';
-                      return Row(children: [
-                        CircleAvatar(radius: 12, backgroundColor: const Color(0xFFe6f1fa), child: Text(initials, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.byuiBlue))),
-                        const SizedBox(width: 4),
-                        Text(name, style: const TextStyle(fontSize: 12, color: AppColors.textGray500)),
-                      ]);
-                    },
+                  ProfileChip(
+                    userId: widget.request.requesterUid,
+                    showName: true,
+                    dense: true,
                   ),
                 ],
               ),
