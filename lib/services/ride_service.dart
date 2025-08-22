@@ -116,8 +116,16 @@ class RideService {
     SortOption sortOption = SortOption.soonest,
     DateTime? startDate,
     DateTime? endDate,
+    bool? isEvent,
   }) {
     Query query = ridesCollection;
+
+    // Explicit filtering (so event rides & normal rides stay separate)
+    if (isEvent == true) {
+      query = query.where('isEvent', isEqualTo: true);
+    } else if (isEvent == false) {
+      query = query.where('isEvent', isEqualTo: false);
+    }
 
     if (!showFullRides) {
       query = query.where('isFull', isEqualTo: false);
@@ -131,6 +139,7 @@ class RideService {
       query = query.where('rideDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
     }
 
+    // Sorting
     switch (sortOption) {
       case SortOption.soonest:
         query = query.orderBy('rideDate', descending: false);
@@ -148,22 +157,17 @@ class RideService {
 
     return query.snapshots().map((snapshot) {
       List<Ride> rides = snapshot.docs
-          .map((doc) =>
-          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
+          .map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
 
       if (fromLocation != null && fromLocation.isNotEmpty) {
         final lowerFrom = fromLocation.toLowerCase();
-        rides = rides
-            .where((r) => r.origin.toLowerCase().contains(lowerFrom))
-            .toList();
+        rides = rides.where((r) => r.origin.toLowerCase().contains(lowerFrom)).toList();
       }
 
       if (toLocation != null && toLocation.isNotEmpty) {
         final lowerTo = toLocation.toLowerCase();
-        rides = rides
-            .where((r) => r.destination.toLowerCase().contains(lowerTo))
-            .toList();
+        rides = rides.where((r) => r.destination.toLowerCase().contains(lowerTo)).toList();
       }
 
       return rides;

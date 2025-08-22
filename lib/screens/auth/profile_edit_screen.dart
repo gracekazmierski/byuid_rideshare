@@ -19,6 +19,7 @@ import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_colors.dart';
 import '../rides/ride_list_screen.dart';
+import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
 
 enum UserRole { rider, driver }
 
@@ -59,6 +60,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   UserProfile? _loadedProfile;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _phoneVisible = false;
 
   // Firestore watcher for verification flip (optional but helpful)
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _verifyWatch;
@@ -140,6 +142,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           _lastNameController.text = profile.lastName;
           _phoneController.text = _phoneFormatter.maskText(profile.phoneNumber);
           _facebookController.text = profile.facebookUsername ?? '';
+          _phoneVisible = profile.phoneVisible;
           if (profile.isDriver) {
             _selectedRole = UserRole.driver;
             _vehicleMakeController.text = profile.vehicleMake ?? '';
@@ -148,6 +151,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             _vehicleYearController.text = profile.vehicleYear?.toString() ?? '';
           } else {
             _selectedRole = UserRole.rider;
+            _phoneVisible = false;
           }
         }
       });
@@ -208,6 +212,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         vehicleYear:
         _selectedRole == UserRole.driver ? int.tryParse(_vehicleYearController.text.trim()) : null,
         profilePictureUrl: profileUrl ?? _loadedProfile?.profilePictureUrl,
+        phoneVisible: _phoneVisible,
       );
 
       await UserService.saveUserProfile(userProfile);
@@ -392,6 +397,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         }
                         return null;
                       },
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Make phone number public",
+                          style: TextStyle(color: AppColors.textGray600, fontSize: 14),
+                        ),
+                        Switch(
+                          value: _phoneVisible,
+                          activeColor: AppColors.byuiBlue,
+                          onChanged: (val) => setState(() => _phoneVisible = val),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

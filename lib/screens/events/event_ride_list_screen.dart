@@ -1,188 +1,26 @@
-// lib/screens/rides/ride_list_screen.dart
-import 'package:byui_rideshare/screens/profile/profile_chip.dart';
-import 'package:byui_rideshare/screens/rides/ride_request_list_screen.dart';
-import 'package:byui_rideshare/screens/rides/create_ride_request_screen.dart';
+// lib/screens/events/event_ride_list_screen.dart
+import 'package:byui_rideshare/screens/events/create_event_ride_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:byui_rideshare/models/ride.dart';
-import 'package:byui_rideshare/services/ride_service.dart';
 import 'package:intl/intl.dart';
+import 'package:byui_rideshare/models/ride.dart';
+import 'package:byui_rideshare/models/sort_option.dart';
+import 'package:byui_rideshare/services/ride_service.dart';
+import 'package:byui_rideshare/screens/events/event_ride_detail_screen.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_screen.dart';
-import 'package:byui_rideshare/screens/rides/ride_detail_screen.dart';
 import 'package:byui_rideshare/screens/rides/my_rides_screen.dart';
 import 'package:byui_rideshare/screens/rides/my_joined_rides_screen.dart';
+import 'package:byui_rideshare/screens/profile/profile_chip.dart';
 import 'package:byui_rideshare/theme/app_colors.dart';
-import 'package:byui_rideshare/screens/events/event_ride_list_screen.dart';
-import 'package:byui_rideshare/screens/settings/settings_screen.dart';
-import 'package:byui_rideshare/models/sort_option.dart';
 
-class RideListScreen extends StatefulWidget {
-  const RideListScreen({super.key});
+class EventRideListScreen extends StatefulWidget {
+  static const String routeName = '/event-rides';
+  const EventRideListScreen({super.key});
 
   @override
-  State<RideListScreen> createState() => _RideListScreenState();
+  State<EventRideListScreen> createState() => _EventRideListScreenState();
 }
 
-class _RideListScreenState extends State<RideListScreen> {
-  // This method handles the popup for offering or requesting a ride.
-  void _showCreateDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext bc) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Wrap(
-              children: <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.directions_car, color: AppColors.byuiBlue),
-                  title: const Text('Offer a Ride'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateRideScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.hail, color: AppColors.byuiBlue),
-                  title: const Text('Request a Ride'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateRideRequestScreen()));
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: AppColors.gray50,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: AppColors.byuiBlue,
-          foregroundColor: Colors.white,
-          title: const Text('RexRide'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.event_available),
-              tooltip: "Event Rides",
-              onPressed: () {
-                Navigator.pushNamed(context, EventRideListScreen.routeName);
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings, size: 28),
-              tooltip: "Settings",
-              onPressed: () => Navigator.pushNamed(context, SettingsScreen.routeName),
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout, size: 28),
-              tooltip: 'Logout',
-              onPressed: () async => await FirebaseAuth.instance.signOut(),
-            ),
-          ],
-          bottom: const PreferredSize(
-            preferredSize: Size.fromHeight(40.0),
-            child: TabBar(
-              tabs: [
-                Tab(text: 'Ride Offers'),
-                Tab(text: 'Ride Requests'),
-              ],
-              indicatorColor: Colors.white,
-              indicatorWeight: 3.0,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-            ),
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            RideOffersList(),
-            RideRequestListScreen(),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showCreateDialog(context),
-          backgroundColor: AppColors.byuiBlue,
-          shape: const CircleBorder(),
-          elevation: 2.0,
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: BottomAppBar(
-          color: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8.0,
-          elevation: 4.0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              _buildNavButton(
-                context,
-                icon: Icons.people_alt,
-                label: 'Joined Rides',
-                route: const MyJoinedRidesScreen(),
-              ),
-              const SizedBox(width: 48), // spacer for the FAB notch
-              _buildNavButton(
-                context,
-                icon: Icons.directions_car, // ✅ Replaced FontAwesome with Material icon
-                label: 'Offered Rides',
-                route: const MyRidesScreen(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper widget for the bottom navigation buttons with labels.
-  Widget _buildNavButton(BuildContext context, {required IconData icon, required String label, required Widget? route}) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          if (route != null) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => route));
-          }
-        },
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ✅ Use Material Icon to avoid FaIcon/FontAwesome dependency
-              Icon(icon, color: AppColors.textGray600, size: 20),
-              const SizedBox(height: 4),
-              Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textGray600)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class RideOffersList extends StatefulWidget {
-  const RideOffersList({super.key});
-  @override
-  State<RideOffersList> createState() => _RideOffersListState();
-}
-
-class _RideOffersListState extends State<RideOffersList> {
+class _EventRideListScreenState extends State<EventRideListScreen> {
   final TextEditingController _fromSearchController = TextEditingController();
   final TextEditingController _toSearchController = TextEditingController();
   String _fromQuery = '';
@@ -233,6 +71,7 @@ class _RideOffersListState extends State<RideOffersList> {
     SortOption tempSort = _selectedSort;
     DateTime? tempStartDate = _startDate;
     DateTime? tempEndDate = _endDate;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -320,8 +159,6 @@ class _RideOffersListState extends State<RideOffersList> {
                     items: const [
                       DropdownMenuItem(value: SortOption.soonest, child: Text("Soonest First")),
                       DropdownMenuItem(value: SortOption.latest, child: Text("Latest First")),
-                      DropdownMenuItem(value: SortOption.lowestFare, child: Text("Lowest Fare")),
-                      DropdownMenuItem(value: SortOption.highestFare, child: Text("Highest Fare")),
                     ],
                     onChanged: (val) {
                       sheetSetState(() => tempSort = val ?? SortOption.soonest);
@@ -451,7 +288,7 @@ class _RideOffersListState extends State<RideOffersList> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {}, // search is live already
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.byuiBlue,
                     foregroundColor: Colors.white,
@@ -469,10 +306,10 @@ class _RideOffersListState extends State<RideOffersList> {
     );
   }
 
-  Widget _buildRideCard(BuildContext context, Ride ride) {
+  Widget _buildRideCard(Ride ride) {
     final bool isRideFull = ride.isFull || ride.availableSeats <= 0;
-    final bool isEventRide = (ride.isEvent == true) || ((ride.eventName ?? '').trim().isNotEmpty);
-    final String eventLabel = (ride.eventName ?? 'Event Ride').trim();
+    final DateTime dep = ride.rideDate.toDate();
+    final DateTime? ret = ride.returnDate?.toDate();
 
     return Card(
       color: Colors.white,
@@ -480,102 +317,85 @@ class _RideOffersListState extends State<RideOffersList> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
-        splashFactory: NoSplash.splashFactory,
-        highlightColor: Colors.transparent,
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => RideDetailScreen(ride: ride)),
+          MaterialPageRoute(builder: (_) => EventRideDetailScreen(ride: ride)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Event banner chip ──────────────────────────────────────────────
-              if (isEventRide) ...[
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.byuiBlue,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.event, size: 14, color: Colors.white),
-                        const SizedBox(width: 6),
-                        // Ellipsis so long event names don’t overflow
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 220),
-                          child: Text(
-                            eventLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              // Title (unchanged): Event name or fallback
+              Text(
+                ride.eventName ?? 'Event Ride',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.byuiBlue,
                 ),
-                const SizedBox(height: 8),
-              ],
-              // ───────────────────────────────────────────────────────────────────
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
 
-              // From / To
-              Column(
+              const SizedBox(height: 6),
+
+              // Subtitle: Origin → Destination
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)),
-                        margin: const EdgeInsets.only(right: 8)),
-                    Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-                  ]),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                        margin: const EdgeInsets.only(right: 8)),
-                    Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-                  ]),
+                  const Icon(Icons.route, size: 16, color: AppColors.textGray500),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${ride.origin} → ${ride.destination}',
+                      style: const TextStyle(fontSize: 14, color: AppColors.textGray600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
 
-              // Date
-              Row(children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
-                const SizedBox(width: 8),
-                Text(
-                  DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()),
-                  style: const TextStyle(fontSize: 14, color: AppColors.textGray500),
+              const SizedBox(height: 8),
+
+              // Departure
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Departure: ${DateFormat('EEE, MMM d').format(dep)} • ${DateFormat('h:mm a').format(dep)}',
+                    style: const TextStyle(fontSize: 13, color: AppColors.textGray500),
+                  ),
+                ],
+              ),
+
+              // Return (optional)
+              if (ret != null) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.textGray500),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Return: ${DateFormat('EEE, MMM d').format(ret)} • ${DateFormat('h:mm a').format(ret)}',
+                      style: const TextStyle(fontSize: 13, color: AppColors.textGray500),
+                    ),
+                  ],
                 ),
-              ]),
-              const SizedBox(height: 12),
+              ],
+
+              const SizedBox(height: 10),
 
               // Seats + Driver
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(children: [
-                    const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue),
-                    ),
-                  ]),
+                  Text(
+                    '${ride.availableSeats} seats',
+                    style: const TextStyle(fontSize: 14, color: AppColors.byuiBlue),
+                  ),
                   ProfileChip(
                     userId: ride.driverUid,
                     dense: true,
@@ -584,22 +404,22 @@ class _RideOffersListState extends State<RideOffersList> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
 
-              // Fare + Posted
-              Text('Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}', style: const TextStyle(fontSize: 14)),
-              Text(
-                'Posted: ${DateFormat('MMM d, h:mm a').format(ride.postCreationTime.toDate())}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-
+              // FULL badge
               if (isRideFull)
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Container(
+                    margin: const EdgeInsets.only(top: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                    child: const Text('FULL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    decoration: BoxDecoration(
+                      color: AppColors.red500,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'FULL',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
                   ),
                 ),
             ],
@@ -609,43 +429,146 @@ class _RideOffersListState extends State<RideOffersList> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildSearchSection(),
-        Expanded(
-          child: StreamBuilder<List<Ride>>(
-            stream: RideService.fetchRideListings(
-              fromLocation: _fromQuery,
-              toLocation: _toQuery,
-              showFullRides: _showFullRides,
-              startDate: _startDate,
-              endDate: _endDate,
-              sortOption: _selectedSort,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-                return const Center(child: Text('No rides currently offered.'));
-              }
+    return Scaffold(
+      backgroundColor: AppColors.gray50,
+      appBar: AppBar(
+        backgroundColor: AppColors.byuiBlue,
+        foregroundColor: Colors.white,
+        title: const Text('Event Rides'),
+        toolbarHeight: 72,
+      ),
+      body: Column(
+        children: [
+          _buildSearchSection(),
+          Expanded(
+            child: StreamBuilder<List<Ride>>(
+              stream: RideService.fetchRideListings(
+                fromLocation: _fromQuery,
+                toLocation: _toQuery,
+                showFullRides: _showFullRides,
+                startDate: _startDate,
+                endDate: _endDate,
+                sortOption: _selectedSort,
+                isEvent: true, // only event rides
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No event rides available.'));
+                }
 
-              final rides = snapshot.data!;
-              return ListView.builder(
-                padding: const EdgeInsets.only(top: 8),
-                itemCount: rides.length,
-                itemBuilder: (context, index) => _buildRideCard(context, rides[index]),
+                final rides = snapshot.data!;
+                return ListView.builder(
+                  padding: const EdgeInsets.only(top: 8),
+                  itemCount: rides.length,
+                  itemBuilder: (_, i) => _buildRideCard(rides[i]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) {
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24), // was 16
+                  child: Wrap(
+                    children: <Widget>[
+                      ListTile(
+                        leading: const Icon(Icons.event, color: AppColors.byuiBlue),
+                        title: const Text('Create Event Ride Listing'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CreateEventRideScreen()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
+          );
+        },
+        backgroundColor: AppColors.byuiBlue,
+        shape: const CircleBorder(),
+        elevation: 2.0,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // 🔁 Bottom bar now matches ride_list_screen exactly
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        elevation: 4.0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            _buildNavButton(
+              context,
+              icon: Icons.people_alt,
+              label: 'Joined Rides',
+              route: const MyJoinedRidesScreen(),
+            ),
+            const SizedBox(width: 48), // spacer for the FAB notch
+            _buildNavButton(
+              context,
+              icon: Icons.directions_car,
+              label: 'Offered Rides',
+              route: const MyRidesScreen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ⬇️ Identical helper to ride_list_screen
+  Widget _buildNavButton(BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Widget? route,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          if (route != null) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => route));
+          }
+        },
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: AppColors.textGray600, size: 20),
+              const SizedBox(height: 4),
+              Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textGray600)),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
