@@ -34,7 +34,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isEmailSigningIn = false;
 
   // IMPORTANT: Replace this with your actual Google Web Client ID
-  final String _googleWebClientId = '527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com'; // <--- PASTE THE CORRECT WEB CLIENT ID HERE
+  final String _googleWebClientId =
+      '527415309529-fhre160snc1rh4fc6c2at39e6n6p6u68.apps.googleusercontent.com'; // <--- PASTE THE CORRECT WEB CLIENT ID HERE
 
   @override
   void dispose() {
@@ -51,22 +52,22 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
       print('User signed in: ${userCredential.user!.email}');
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in successful!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sign in successful!')));
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
-
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String message;
@@ -78,15 +79,15 @@ class _LoginPageState extends State<LoginPage> {
         message = 'Sign in failed: ${e.message}';
       }
       print('Firebase Auth Error: $message');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $message')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $message')));
     } catch (e) {
       if (!mounted) return;
       print('General Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('An error occurred: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -118,14 +119,16 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
       User? user = userCredential.user;
 
       if (!mounted) return;
@@ -140,15 +143,14 @@ class _LoginPageState extends State<LoginPage> {
       if (isNewUser) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-              (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
         );
       } else {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const AuthWrapper()),
-              (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
         );
       }
-
     } catch (e) {
       if (!mounted) return;
       print('General Google Sign-In Error: $e');
@@ -175,18 +177,22 @@ class _LoginPageState extends State<LoginPage> {
       // TODO: Add your Facebook Sign-In logic here
       // You can use `flutter_facebook_auth` package for Facebook login
 
-      await Future.delayed(const Duration(seconds: 1)); // Dummy delay to simulate loading
+      await Future.delayed(
+        const Duration(seconds: 1),
+      ); // Dummy delay to simulate loading
 
       // After successful sign-in, navigate accordingly:
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       if (!mounted) return;
       print('Facebook Sign-In Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred during Facebook Sign-In.')),
+        const SnackBar(
+          content: Text('An error occurred during Facebook Sign-In.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -208,18 +214,22 @@ class _LoginPageState extends State<LoginPage> {
       // TODO: Add your Apple Sign-In logic here
       // You can use `sign_in_with_apple` package for Apple login
 
-      await Future.delayed(const Duration(seconds: 1)); // Dummy delay to simulate loading
+      await Future.delayed(
+        const Duration(seconds: 1),
+      ); // Dummy delay to simulate loading
 
       // After successful sign-in, navigate accordingly:
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       if (!mounted) return;
       print('Apple Sign-In Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred during Apple Sign-In.')),
+        const SnackBar(
+          content: Text('An error occurred during Apple Sign-In.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -239,34 +249,45 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.gray50, // Main background color for the screen
-      body: Column( // Use a Column to stack the header and the scrollable content
+      body: Column(
+        // Use a Column to stack the header and the scrollable content
         children: [
           // Header (bg-[#006eb6] text-white px-4 py-6 relative)
           Container(
             color: AppColors.headerAndPrimaryBlue, // bg-[#006eb6]
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0), // px-4 py-6
-            child: SafeArea( // Ensures content is below status bar
-              child: Stack( // For positioning the DEBUG badge
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ), // px-4 py-6
+            child: SafeArea(
+              // Ensures content is below status bar
+              child: Stack(
+                // For positioning the DEBUG badge
                 children: [
                   Row(
                     children: [
                       // Back Button (Button variant="ghost" size="icon" className="text-white hover:bg-white/10 p-0 h-8 w-8)
                       SizedBox(
                         height: 32.0, // h-8
-                        width: 32.0,  // w-8
+                        width: 32.0, // w-8
                         child: IconButton(
                           padding: EdgeInsets.zero, // p-0
                           iconSize: 20.0, // h-5 w-5 (approx)
-                          icon: const Icon(Icons.arrow_back, color: Colors.white), // ArrowLeft equivalent
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ), // ArrowLeft equivalent
                           onPressed: () {
                             Navigator.pop(context); // Go back to WelcomeScreen
                           },
-                          splashRadius: 20.0, // Smaller splash radius for icon buttons
-                          highlightColor: Colors.white.withOpacity(0.1), // hover:bg-white/10
+                          splashRadius:
+                              20.0, // Smaller splash radius for icon buttons
+                          highlightColor: Colors.white.withOpacity(
+                            0.1,
+                          ), // hover:bg-white/10
                         ),
                       ),
                       const SizedBox(width: 16.0), // gap-4
-
                       // Title and Description
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,30 +317,45 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           // Content section (px-4 py-8)
-          Expanded( // Allows content to take remaining space and scroll
+          Expanded(
+            // Allows content to take remaining space and scroll
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0), // px-4 py-8
-              child: Align( // max-w-md mx-auto
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 32.0,
+              ), // px-4 py-8
+              child: Align(
+                // max-w-md mx-auto
                 alignment: Alignment.topCenter, // Align to top center
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 448.0), // max-w-md (approx 448px for 28rem)
+                  constraints: const BoxConstraints(
+                    maxWidth: 448.0,
+                  ), // max-w-md (approx 448px for 28rem)
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch, // For stretching buttons
+                    crossAxisAlignment:
+                        CrossAxisAlignment.stretch, // For stretching buttons
                     children: [
                       // Login Form Card (bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4)
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white, // bg-white
-                          borderRadius: BorderRadius.circular(8.0), // rounded-lg
+                          borderRadius: BorderRadius.circular(
+                            8.0,
+                          ), // rounded-lg
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05), // shadow-sm
+                              color: Colors.black.withOpacity(
+                                0.05,
+                              ), // shadow-sm
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
                           ],
-                          border: Border.all(color: AppColors.gray200, width: 1.0), // border border-gray-200
+                          border: Border.all(
+                            color: AppColors.gray200,
+                            width: 1.0,
+                          ), // border border-gray-200
                         ),
                         padding: const EdgeInsets.all(24.0), // p-6
                         child: Column(
@@ -333,19 +369,30 @@ class _LoginPageState extends State<LoginPage> {
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   decoration: InputDecoration(
-                                    hintText: 'Email - Enter your email address',
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                    hintText:
+                                        'Email - Enter your email address',
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                      vertical: 12.0,
+                                    ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      borderSide: BorderSide(color: AppColors.gray300),
+                                      borderSide: BorderSide(
+                                        color: AppColors.gray300,
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      borderSide: BorderSide(color: AppColors.gray300),
+                                      borderSide: BorderSide(
+                                        color: AppColors.gray300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      borderSide: BorderSide(color: AppColors.inputFocusBlue, width: 2.0),
+                                      borderSide: BorderSide(
+                                        color: AppColors.inputFocusBlue,
+                                        width: 2.0,
+                                      ),
                                     ),
                                     filled: true,
                                     fillColor: Colors.white,
@@ -354,7 +401,6 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                             const SizedBox(height: 16.0), // space-y-4
-
                             // Password Input Field (space-y-4)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,24 +410,36 @@ class _LoginPageState extends State<LoginPage> {
                                   obscureText: !_showPassword,
                                   decoration: InputDecoration(
                                     hintText: 'Password - Enter your password',
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                      vertical: 12.0,
+                                    ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      borderSide: BorderSide(color: AppColors.gray300),
+                                      borderSide: BorderSide(
+                                        color: AppColors.gray300,
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      borderSide: BorderSide(color: AppColors.gray300),
+                                      borderSide: BorderSide(
+                                        color: AppColors.gray300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      borderSide: BorderSide(color: AppColors.inputFocusBlue, width: 2.0),
+                                      borderSide: BorderSide(
+                                        color: AppColors.inputFocusBlue,
+                                        width: 2.0,
+                                      ),
                                     ),
                                     filled: true,
                                     fillColor: Colors.white,
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                                        _showPassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
                                         color: AppColors.textGray500,
                                       ),
                                       onPressed: () {
@@ -390,57 +448,68 @@ class _LoginPageState extends State<LoginPage> {
                                         });
                                       },
                                       splashRadius: 20.0,
-                                      highlightColor: AppColors.gray700.withOpacity(0.1),
+                                      highlightColor: AppColors.gray700
+                                          .withOpacity(0.1),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24.0), // space-y-4 (after password input)
-
+                            const SizedBox(
+                              height: 24.0,
+                            ), // space-y-4 (after password input)
                             // Sign In Button (w-full h-12 bg-[#006eb6] hover:bg-[#005a9a] text-white font-medium rounded-lg)
                             _isEmailSigningIn
-                                ? const Center(child: CircularProgressIndicator())
+                                ? const Center(
+                                  child: CircularProgressIndicator(),
+                                )
                                 : SizedBox(
-                              width: double.infinity, // w-full
-                              height: 48.0, // h-12
-                              child: ElevatedButton(
-                                onPressed: _signIn,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.headerAndPrimaryBlue,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.0), // rounded-lg
+                                  width: double.infinity, // w-full
+                                  height: 48.0, // h-12
+                                  child: ElevatedButton(
+                                    onPressed: _signIn,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          AppColors.headerAndPrimaryBlue,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          8.0,
+                                        ), // rounded-lg
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight:
+                                            FontWeight.w500, // font-medium
+                                      ),
+                                      elevation: 0, // Flat design
+                                    ),
+                                    child: const Text('Sign In'),
                                   ),
-                                  textStyle: const TextStyle(
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.w500, // font-medium
-                                  ),
-                                  elevation: 0, // Flat design
                                 ),
-                                child: const Text('Sign In'),
-                              ),
-                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24.0), // space-y-6 after the login form card
-
+                      const SizedBox(
+                        height: 24.0,
+                      ), // space-y-6 after the login form card
                       // Alternative Sign In (space-y-4)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Sign In with Google Button (w-full h-12 bg-white text-gray-700 border-gray-300 hover:bg-gray-50 font-medium rounded-lg)
                           // Alternative Sign In buttons as icon-only mini buttons in a row
-                          if (_isGoogleSigningIn || _isFacebookSigningIn || _isAppleSigningIn)
+                          if (_isGoogleSigningIn ||
+                              _isFacebookSigningIn ||
+                              _isAppleSigningIn)
                             Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12.0,
+                                ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    CircularProgressIndicator(),
-                                  ],
+                                  children: const [CircularProgressIndicator()],
                                 ),
                               ),
                             )
@@ -459,7 +528,9 @@ class _LoginPageState extends State<LoginPage> {
                                     onPressed: _handleFacebookSignIn,
                                   ),
                                   const SizedBox(height: 12),
-                                  if (!kIsWeb && Platform.isIOS) // Show Apple sign-in only on iOS native (not web)
+                                  if (!kIsWeb &&
+                                      Platform
+                                          .isIOS) // Show Apple sign-in only on iOS native (not web)
                                     SignInButton(
                                       Buttons.apple,
                                       onPressed: _handleAppleSignIn,
@@ -468,14 +539,17 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
 
-                          const SizedBox(height: 16.0), // space between sign-in buttons and create account
-
+                          const SizedBox(
+                            height: 16.0,
+                          ), // space between sign-in buttons and create account
                           // Create Account Button (text-center Button variant="link" className="text-[#006eb6] hover:text-[#005a9a] font-medium")
                           Center(
                             child: TextButton(
                               onPressed: _navigateToCreateAccount,
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.headerAndPrimaryBlue, // text-[#006eb6]
+                                foregroundColor:
+                                    AppColors
+                                        .headerAndPrimaryBlue, // text-[#006eb6]
                                 textStyle: const TextStyle(
                                   fontSize: 16.0,
                                   fontWeight: FontWeight.w500, // font-medium

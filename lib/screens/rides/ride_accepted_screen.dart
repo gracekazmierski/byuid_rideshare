@@ -7,8 +7,8 @@ class RideAcceptedScreen extends StatelessWidget {
 
   const RideAcceptedScreen({super.key, required this.rideId});
 
-// Display a confirmation message
-// Provide a button to return to the main/home
+  // Display a confirmation message
+  // Provide a button to return to the main/home
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,7 +17,10 @@ class RideAcceptedScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Your ride request was accepted!', style: TextStyle(fontSize: 18)),
+            Text(
+              'Your ride request was accepted!',
+              style: TextStyle(fontSize: 18),
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).popUntil((route) => route.isFirst);
@@ -30,4 +33,3 @@ class RideAcceptedScreen extends StatelessWidget {
     );
   }
 }
-

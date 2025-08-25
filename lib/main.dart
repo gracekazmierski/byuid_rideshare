@@ -18,9 +18,7 @@ import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // FCM permissions + listeners
   await FirebaseMessaging.instance.requestPermission();

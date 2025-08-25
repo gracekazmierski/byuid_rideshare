@@ -27,9 +27,7 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen> {
     if (_currentUser == null) {
       return Scaffold(
         appBar: AppBar(title: Text('Driver Requests')),
-        body: Center(
-          child: Text('Not authenticated'),
-        ),
+        body: Center(child: Text('Not authenticated')),
       );
     }
 
@@ -39,7 +37,7 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen> {
         stream: RideService.fetchRideRequestsForDriver(_currentUser!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator()); 
+            return Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -59,34 +57,32 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen> {
                 title: Text('Rider UID: ${request.riderUid}'),
                 subtitle: Text('Message: ${request.message}'),
                 trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.check, color: Colors.green),
-                        onPressed: () async {
-                          await RideService.acceptRideRequest(
-                                request.id,
-                                request.rideId,
-                                request.riderUid,
-                             );
-                         ScaffoldMessenger.of(context).showSnackBar(
-                             SnackBar(content: Text('Request accepted')),
-                         );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.red),
-                        onPressed: () async {
-                          await RideService.denyRideRequest(
-                                request.id,
-                             );
-                         ScaffoldMessenger.of(context).showSnackBar(
-                             SnackBar(content: Text('Request denied')),
-                         );
-                        },
-                      ),
-                    ],
-                 ),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.check, color: Colors.green),
+                      onPressed: () async {
+                        await RideService.acceptRideRequest(
+                          request.id,
+                          request.rideId,
+                          request.riderUid,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Request accepted')),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.red),
+                      onPressed: () async {
+                        await RideService.denyRideRequest(request.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Request denied')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               );
             },
           );
@@ -95,4 +91,3 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen> {
     );
   }
 }
-

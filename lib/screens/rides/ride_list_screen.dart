@@ -40,11 +40,19 @@ class _RideListScreenState extends State<RideListScreen> {
             child: Wrap(
               children: <Widget>[
                 ListTile(
-                  leading: const Icon(Icons.directions_car, color: AppColors.byuiBlue),
+                  leading: const Icon(
+                    Icons.directions_car,
+                    color: AppColors.byuiBlue,
+                  ),
                   title: const Text('Offer a Ride'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateRideScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateRideScreen(),
+                      ),
+                    );
                   },
                 ),
                 ListTile(
@@ -52,7 +60,12 @@ class _RideListScreenState extends State<RideListScreen> {
                   title: const Text('Request a Ride'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateRideRequestScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateRideRequestScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -78,7 +91,13 @@ class _RideListScreenState extends State<RideListScreen> {
             IconButton(
               icon: const Icon(Icons.account_circle, size: 28),
               tooltip: "My Profile",
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileEditScreen())),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileEditScreen(),
+                    ),
+                  ),
             ),
             IconButton(
               icon: const Icon(Icons.logout, size: 28),
@@ -89,10 +108,7 @@ class _RideListScreenState extends State<RideListScreen> {
           bottom: const PreferredSize(
             preferredSize: Size.fromHeight(40.0),
             child: TabBar(
-              tabs: [
-                Tab(text: 'Ride Offers'),
-                Tab(text: 'Ride Requests'),
-              ],
+              tabs: [Tab(text: 'Ride Offers'), Tab(text: 'Ride Requests')],
               indicatorColor: Colors.white,
               indicatorWeight: 3.0,
               labelColor: Colors.white,
@@ -101,10 +117,7 @@ class _RideListScreenState extends State<RideListScreen> {
           ),
         ),
         body: const TabBarView(
-          children: [
-            RideOffersList(),
-            RideRequestListScreen(),
-          ],
+          children: [RideOffersList(), RideRequestListScreen()],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showCreateDialog(context),
@@ -117,25 +130,26 @@ class _RideListScreenState extends State<RideListScreen> {
         bottomNavigationBar: BottomAppBar(
           color: Colors.white,
           surfaceTintColor: Colors.transparent,
-          shape: const CircularNotchedRectangle(), // Creates the notch for the FAB.
+          shape:
+              const CircularNotchedRectangle(), // Creates the notch for the FAB.
           notchMargin: 8.0,
           elevation: 4.0, // Gives a slight shadow below the bar.
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
               _buildNavButton(
-                  context,
-                  icon: Icons.people_alt,
-                  label: 'Joined Rides',
-                  route: const MyJoinedRidesScreen()
+                context,
+                icon: Icons.people_alt,
+                label: 'Joined Rides',
+                route: const MyJoinedRidesScreen(),
               ),
               // This SizedBox acts as a spacer, pushing the next button to the other side of the notch.
               const SizedBox(width: 48),
               _buildNavButton(
-                  context,
-                  icon: FontAwesomeIcons.car,
-                  label: 'Offered Rides',
-                  route: const MyRidesScreen()
+                context,
+                icon: FontAwesomeIcons.car,
+                label: 'Offered Rides',
+                route: const MyRidesScreen(),
               ),
             ],
           ),
@@ -145,12 +159,20 @@ class _RideListScreenState extends State<RideListScreen> {
   }
 
   // Helper widget for the bottom navigation buttons with labels.
-  Widget _buildNavButton(BuildContext context, {required IconData icon, required String label, required Widget? route}) {
+  Widget _buildNavButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Widget? route,
+  }) {
     return Expanded(
       child: InkWell(
         onTap: () {
           if (route != null) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => route));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => route),
+            );
           }
         },
         customBorder: const CircleBorder(),
@@ -161,7 +183,13 @@ class _RideListScreenState extends State<RideListScreen> {
             children: [
               FaIcon(icon, color: AppColors.textGray600, size: 20),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textGray600)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textGray600,
+                ),
+              ),
             ],
           ),
         ),
@@ -213,12 +241,12 @@ class _RideOffersListState extends State<RideOffersList> {
       labelText: labelText,
       labelStyle: const TextStyle(color: AppColors.textGray500),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: AppColors.gray300)
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: AppColors.gray300),
       ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: AppColors.byuiBlue, width: 2.0)
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: AppColors.byuiBlue, width: 2.0),
       ),
     );
   }
@@ -239,8 +267,10 @@ class _RideOffersListState extends State<RideOffersList> {
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter sheetSetState) {
-            Future<DateTime?> showThemedDatePicker(
-                {required DateTime initialDate, required DateTime firstDate}) async {
+            Future<DateTime?> showThemedDatePicker({
+              required DateTime initialDate,
+              required DateTime firstDate,
+            }) async {
               return await showDatePicker(
                 context: context,
                 initialDate: initialDate,
@@ -265,27 +295,43 @@ class _RideOffersListState extends State<RideOffersList> {
                 },
               );
             }
+
             return Padding(
-              padding: EdgeInsets.fromLTRB(24, 8, 24, MediaQuery
-                  .of(context)
-                  .viewInsets
-                  .bottom + 24),
+              padding: EdgeInsets.fromLTRB(
+                24,
+                8,
+                24,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Container(width: 40,
+                  Center(
+                    child: Container(
+                      width: 40,
                       height: 5,
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(color: AppColors.gray300,
-                          borderRadius: BorderRadius.circular(10)))),
-                  const Text('Filters & Sorting', style: TextStyle(fontSize: 22,
+                      decoration: BoxDecoration(
+                        color: AppColors.gray300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    'Filters & Sorting',
+                    style: TextStyle(
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textGray600)),
+                      color: AppColors.textGray600,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   CheckboxListTile(
-                    title: const Text('Show Full Rides',
-                        style: TextStyle(color: AppColors.textGray600)),
+                    title: const Text(
+                      'Show Full Rides',
+                      style: TextStyle(color: AppColors.textGray600),
+                    ),
                     value: tempShowFull,
                     onChanged: (val) {
                       sheetSetState(() => tempShowFull = val ?? true);
@@ -298,14 +344,22 @@ class _RideOffersListState extends State<RideOffersList> {
                     value: tempSort,
                     decoration: _inputDecoration(labelText: 'Sort By'),
                     items: const [
-                      DropdownMenuItem(value: SortOption.soonest,
-                          child: Text("Soonest First")),
-                      DropdownMenuItem(value: SortOption.latest,
-                          child: Text("Latest First")),
-                      DropdownMenuItem(value: SortOption.lowestFare,
-                          child: Text("Lowest Fare")),
-                      DropdownMenuItem(value: SortOption.highestFare,
-                          child: Text("Highest Fare")),
+                      DropdownMenuItem(
+                        value: SortOption.soonest,
+                        child: Text("Soonest First"),
+                      ),
+                      DropdownMenuItem(
+                        value: SortOption.latest,
+                        child: Text("Latest First"),
+                      ),
+                      DropdownMenuItem(
+                        value: SortOption.lowestFare,
+                        child: Text("Lowest Fare"),
+                      ),
+                      DropdownMenuItem(
+                        value: SortOption.highestFare,
+                        child: Text("Highest Fare"),
+                      ),
                     ],
                     onChanged: (val) {
                       sheetSetState(() => tempSort = val ?? SortOption.soonest);
@@ -315,36 +369,52 @@ class _RideOffersListState extends State<RideOffersList> {
                   const Divider(),
                   ListTile(
                     leading: const Icon(
-                        Icons.date_range, color: AppColors.textGray500),
-                    title: const Text("Date Range",
-                        style: TextStyle(color: AppColors.textGray500)),
+                      Icons.date_range,
+                      color: AppColors.textGray500,
+                    ),
+                    title: const Text(
+                      "Date Range",
+                      style: TextStyle(color: AppColors.textGray500),
+                    ),
                     subtitle: Text(
-                        (tempStartDate == null) ? "Any date" : "${DateFormat(
-                            'MM/dd/yy').format(tempStartDate!)} - ${DateFormat(
-                            'MM/dd/yy').format(tempEndDate ?? tempStartDate!)}",
-                        style: const TextStyle(color: AppColors.textGray600,
-                            fontWeight: FontWeight.bold)),
+                      (tempStartDate == null)
+                          ? "Any date"
+                          : "${DateFormat('MM/dd/yy').format(tempStartDate!)} - ${DateFormat('MM/dd/yy').format(tempEndDate ?? tempStartDate!)}",
+                      style: const TextStyle(
+                        color: AppColors.textGray600,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     onTap: () async {
                       final pickedStart = await showThemedDatePicker(
-                          initialDate: tempStartDate ?? DateTime.now(),
-                          firstDate: DateTime.now());
+                        initialDate: tempStartDate ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                      );
                       if (pickedStart != null) {
                         final pickedEnd = await showThemedDatePicker(
-                            initialDate: pickedStart, firstDate: pickedStart);
+                          initialDate: pickedStart,
+                          firstDate: pickedStart,
+                        );
                         sheetSetState(() {
                           tempStartDate = pickedStart;
                           tempEndDate = pickedEnd;
                         });
                       }
                     },
-                    trailing: (tempStartDate != null) ? IconButton(
-                        icon: const Icon(
-                            Icons.clear, color: AppColors.textGray500),
-                        onPressed: () =>
-                            sheetSetState(() {
-                              tempStartDate = null;
-                              tempEndDate = null;
-                            })) : null,
+                    trailing:
+                        (tempStartDate != null)
+                            ? IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppColors.textGray500,
+                              ),
+                              onPressed:
+                                  () => sheetSetState(() {
+                                    tempStartDate = null;
+                                    tempEndDate = null;
+                                  }),
+                            )
+                            : null,
                     contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 24),
@@ -362,10 +432,13 @@ class _RideOffersListState extends State<RideOffersList> {
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.byuiBlue,
-                          foregroundColor: Colors.white),
-                      child: const Text('Apply Filters',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                        backgroundColor: AppColors.byuiBlue,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        'Apply Filters',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -385,54 +458,84 @@ class _RideOffersListState extends State<RideOffersList> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(controller: _fromSearchController,
-              decoration: InputDecoration(
-                  hintText: 'FROM - Enter pickup location',
-                  prefixIcon: const Icon(
-                      Icons.location_on, color: AppColors.byuiGreen),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none),
-                  filled: true,
-                  fillColor: AppColors.gray50,
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14.0, horizontal: 10.0))),
+          TextField(
+            controller: _fromSearchController,
+            decoration: InputDecoration(
+              hintText: 'FROM - Enter pickup location',
+              prefixIcon: const Icon(
+                Icons.location_on,
+                color: AppColors.byuiGreen,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: AppColors.gray50,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 14.0,
+                horizontal: 10.0,
+              ),
+            ),
+          ),
           const SizedBox(height: 12.0),
-          TextField(controller: _toSearchController,
-              decoration: InputDecoration(hintText: 'TO - Enter destination',
-                  prefixIcon: const Icon(
-                      Icons.location_on, color: AppColors.red500),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none),
-                  filled: true,
-                  fillColor: AppColors.gray50,
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14.0, horizontal: 10.0))),
+          TextField(
+            controller: _toSearchController,
+            decoration: InputDecoration(
+              hintText: 'TO - Enter destination',
+              prefixIcon: const Icon(
+                Icons.location_on,
+                color: AppColors.red500,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: AppColors.gray50,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 14.0,
+                horizontal: 10.0,
+              ),
+            ),
+          ),
           const SizedBox(height: 16.0),
           Row(
             children: [
-              Expanded(child: OutlinedButton.icon(
+              Expanded(
+                child: OutlinedButton.icon(
                   icon: const Icon(Icons.filter_list),
                   label: const Text('Filters'),
                   onPressed: _showFilterSheet,
                   style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.byuiBlue,
-                      side: const BorderSide(color: AppColors.byuiBlue),
-                      padding: const EdgeInsets.symmetric(vertical: 14.0),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8))))),
+                    foregroundColor: AppColors.byuiBlue,
+                    side: const BorderSide(color: AppColors.byuiBlue),
+                    padding: const EdgeInsets.symmetric(vertical: 14.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: ElevatedButton(onPressed: () {},
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.byuiBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14.0),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      elevation: 2),
-                  child: const Text('Search', style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)))),
+                    backgroundColor: AppColors.byuiBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Search',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -450,7 +553,13 @@ class _RideOffersListState extends State<RideOffersList> {
       child: InkWell(
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RideDetailScreen(ride: ride))),
+        onTap:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RideDetailScreen(ride: ride),
+              ),
+            ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -459,23 +568,69 @@ class _RideOffersListState extends State<RideOffersList> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(right: 8)),
-                    Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-                  ]),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppColors.byuiGreen,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        margin: const EdgeInsets.only(right: 8),
+                      ),
+                      Text(
+                        ride.origin,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.gray700,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Row(children: [
-                    Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(right: 8)),
-                    Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-                  ]),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppColors.red500,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        margin: const EdgeInsets.only(right: 8),
+                      ),
+                      Text(
+                        ride.destination,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.gray700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              Row(children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
-                const SizedBox(width: 8),
-                Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()), style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
-              ]),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: AppColors.textGray500,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textGray500,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
 
               // ✅ THIS IS THE CORRECTED ROW
@@ -483,28 +638,55 @@ class _RideOffersListState extends State<RideOffersList> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // This part is unchanged
-                  Row(children: [
-                    const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
-                    const SizedBox(width: 8),
-                    Text('${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
-                  ]),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.group,
+                        size: 16,
+                        color: AppColors.byuiBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.byuiBlue,
+                        ),
+                      ),
+                    ],
+                  ),
 
                   // This FutureBuilder now correctly handles layout
                   FutureBuilder<String?>(
                     future: UserService.getUserName(ride.driverUid),
                     builder: (context, snapshot) {
                       final name = snapshot.data ?? "Unknown Driver";
-                      String initials = name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').join().toUpperCase();
-                      if (initials.length > 2) initials = initials.substring(0, 2);
+                      String initials =
+                          name
+                              .split(' ')
+                              .map((w) => w.isNotEmpty ? w[0] : '')
+                              .join()
+                              .toUpperCase();
+                      if (initials.length > 2)
+                        initials = initials.substring(0, 2);
                       if (initials.isEmpty) initials = '?';
 
                       return Row(
-                        mainAxisSize: MainAxisSize.min, // Important for Flexible to work
+                        mainAxisSize:
+                            MainAxisSize.min, // Important for Flexible to work
                         children: [
                           CircleAvatar(
                             radius: 12,
                             backgroundColor: const Color(0xFFe6f1fa),
-                            child: Text(initials, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.byuiBlue)),
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.byuiBlue,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 4),
                           // Flexible now wraps only the Text, allowing it to truncate
@@ -512,7 +694,10 @@ class _RideOffersListState extends State<RideOffersList> {
                           Flexible(
                             child: Text(
                               name,
-                              style: const TextStyle(fontSize: 12, color: AppColors.textGray500),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textGray500,
+                              ),
                               overflow: TextOverflow.ellipsis,
                               softWrap: false,
                             ),
@@ -524,10 +709,36 @@ class _RideOffersListState extends State<RideOffersList> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}', style: const TextStyle(fontSize: 14)),
-              Text('Posted: ${DateFormat('MMM d, h:mm a').format(ride.postCreationTime.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                'Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              Text(
+                'Posted: ${DateFormat('MMM d, h:mm a').format(ride.postCreationTime.toDate())}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
               if (isRideFull)
-                Align(alignment: Alignment.bottomRight, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)), child: const Text('FULL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)))),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.red500,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'FULL',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -558,7 +769,8 @@ class _RideOffersListState extends State<RideOffersList> {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
               // ✅ SAFER CHECK: This prevents the crash by checking for null explicitly.
-              if (!snapshot.hasData || snapshot.data == null ||
+              if (!snapshot.hasData ||
+                  snapshot.data == null ||
                   snapshot.data!.isEmpty) {
                 return const Center(child: Text('No rides currently offered.'));
               }
@@ -569,8 +781,8 @@ class _RideOffersListState extends State<RideOffersList> {
               return ListView.builder(
                 padding: const EdgeInsets.only(top: 8),
                 itemCount: rides.length,
-                itemBuilder: (context, index) =>
-                    _buildRideCard(context, rides[index]),
+                itemBuilder:
+                    (context, index) => _buildRideCard(context, rides[index]),
               );
             },
           ),

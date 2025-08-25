@@ -14,14 +14,11 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-
         // State 1: Waiting for Firebase to check for a saved user
         // While it's checking, we show a loading spinner.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -39,7 +36,6 @@ class AuthWrapper extends StatelessWidget {
           saveFcmTokenToUser();
           return const RideListScreen();
         }
-
         // State 4: We have no data, meaning the user is NOT logged in
         else {
           // If snapshot.data is null, no user is signed in.

@@ -101,9 +101,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         final emailArg = args['byuiEmail'];
         if (emailArg is String) _byuiEmail = emailArg;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('BYUI email verified.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('BYUI email verified.')));
     }
   }
 
@@ -155,7 +155,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     // Load BYUI verification status from Firestore
     try {
-      final snap = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final snap =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final data = snap.data();
       if (mounted) {
         setState(() {
@@ -190,11 +191,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     try {
       if (_selectedImage != null) {
         debugPrint('📷 Uploading File image...');
-        profileUrl = await UserService().uploadProfilePicture(currentUser.uid, _selectedImage!);
+        profileUrl = await UserService().uploadProfilePicture(
+          currentUser.uid,
+          _selectedImage!,
+        );
       } else if (_selectedImageBytes != null) {
         debugPrint('🧠 Uploading memory image...');
-        profileUrl =
-        await UserService().uploadProfilePictureFromBytes(currentUser.uid, _selectedImageBytes!);
+        profileUrl = await UserService().uploadProfilePictureFromBytes(
+          currentUser.uid,
+          _selectedImageBytes!,
+        );
       }
 
       debugPrint('🧱 Constructing user profile');
@@ -205,11 +211,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         phoneNumber: _phoneController.text.replaceAll(RegExp(r'[^0-9]'), ''),
         facebookUsername: _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
-        vehicleMake: _selectedRole == UserRole.driver ? _vehicleMakeController.text.trim() : null,
-        vehicleModel: _selectedRole == UserRole.driver ? _vehicleModelController.text.trim() : null,
-        vehicleColor: _selectedRole == UserRole.driver ? _vehicleColorController.text.trim() : null,
+        vehicleMake:
+            _selectedRole == UserRole.driver
+                ? _vehicleMakeController.text.trim()
+                : null,
+        vehicleModel:
+            _selectedRole == UserRole.driver
+                ? _vehicleModelController.text.trim()
+                : null,
+        vehicleColor:
+            _selectedRole == UserRole.driver
+                ? _vehicleColorController.text.trim()
+                : null,
         vehicleYear:
-        _selectedRole == UserRole.driver ? int.tryParse(_vehicleYearController.text.trim()) : null,
+            _selectedRole == UserRole.driver
+                ? int.tryParse(_vehicleYearController.text.trim())
+                : null,
         profilePictureUrl: profileUrl ?? _loadedProfile?.profilePictureUrl,
       );
 
@@ -217,7 +234,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       await UserService.saveUserProfile(userProfile);
       debugPrint('✅ Profile saved');
 
-      await currentUser.updateDisplayName('${userProfile.firstName} ${userProfile.lastName}'.trim());
+      await currentUser.updateDisplayName(
+        '${userProfile.firstName} ${userProfile.lastName}'.trim(),
+      );
 
       if (mounted) {
         debugPrint('🔁 Navigating to RideListScreen');
@@ -226,15 +245,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         );
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const RideListScreen()),
-              (route) => false,
+          (route) => false,
         );
       }
     } catch (e) {
       debugPrint('❌ Error in saveChanges: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
       }
     } finally {
       if (mounted) {
@@ -265,11 +284,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Edit Profile',
-                      style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Edit Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   SizedBox(height: 2.0),
-                  Text("Keep your information up to date",
-                      style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(
+                    "Keep your information up to date",
+                    style: TextStyle(color: AppColors.blue100, fontSize: 14.0),
+                  ),
                 ],
               ),
             ],
@@ -286,246 +313,307 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Scaffold(
       backgroundColor: AppColors.gray50,
       appBar: _buildAppBar(context),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-        children: [
-          Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
-              children: [
-                Center(
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          final pickedFile =
-                          await _picker.pickImage(source: ImageSource.gallery);
-                          if (pickedFile != null) {
-                            if (kIsWeb) {
-                              final bytes = await pickedFile.readAsBytes();
-                              setState(() {
-                                _selectedImageBytes = bytes;
-                                _selectedImage = null;
-                              });
-                            } else {
-                              setState(() {
-                                _selectedImage = File(pickedFile.path);
-                                _selectedImageBytes = null;
-                              });
-                            }
-                          }
-                        },
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: AppColors.blue100,
-                          backgroundImage: _selectedImageBytes != null
-                              ? MemoryImage(_selectedImageBytes!)
-                              : _selectedImage != null
-                              ? FileImage(_selectedImage!) as ImageProvider
-                              : (_loadedProfile?.profilePictureUrl != null &&
-                              _loadedProfile!.profilePictureUrl!.isNotEmpty)
-                              ? NetworkImage(_loadedProfile!.profilePictureUrl!)
-                              : null,
-                          child: (_selectedImageBytes == null &&
-                              _selectedImage == null &&
-                              (_loadedProfile?.profilePictureUrl == null ||
-                                  _loadedProfile!.profilePictureUrl!.isEmpty))
-                              ? const Icon(Icons.person, size: 40, color: Colors.white)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.byuiBlue,
-                        ).copyWith(
-                          overlayColor: WidgetStateProperty.resolveWith(
-                                (states) => states.contains(WidgetState.pressed)
-                                ? AppColors.blue100.withValues(alpha: 0.2)
-                                : null,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
+                children: [
+                  Form(
+                    key: _formKey,
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+                      children: [
+                        Center(
+                          child: Column(
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  final pickedFile = await _picker.pickImage(
+                                    source: ImageSource.gallery,
+                                  );
+                                  if (pickedFile != null) {
+                                    if (kIsWeb) {
+                                      final bytes =
+                                          await pickedFile.readAsBytes();
+                                      setState(() {
+                                        _selectedImageBytes = bytes;
+                                        _selectedImage = null;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        _selectedImage = File(pickedFile.path);
+                                        _selectedImageBytes = null;
+                                      });
+                                    }
+                                  }
+                                },
+                                child: CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: AppColors.blue100,
+                                  backgroundImage:
+                                      _selectedImageBytes != null
+                                          ? MemoryImage(_selectedImageBytes!)
+                                          : _selectedImage != null
+                                          ? FileImage(_selectedImage!)
+                                              as ImageProvider
+                                          : (_loadedProfile
+                                                      ?.profilePictureUrl !=
+                                                  null &&
+                                              _loadedProfile!
+                                                  .profilePictureUrl!
+                                                  .isNotEmpty)
+                                          ? NetworkImage(
+                                            _loadedProfile!.profilePictureUrl!,
+                                          )
+                                          : null,
+                                  child:
+                                      (_selectedImageBytes == null &&
+                                              _selectedImage == null &&
+                                              (_loadedProfile
+                                                          ?.profilePictureUrl ==
+                                                      null ||
+                                                  _loadedProfile!
+                                                      .profilePictureUrl!
+                                                      .isEmpty))
+                                          ? const Icon(
+                                            Icons.person,
+                                            size: 40,
+                                            color: Colors.white,
+                                          )
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.byuiBlue,
+                                ).copyWith(
+                                  overlayColor: WidgetStateProperty.resolveWith(
+                                    (states) =>
+                                        states.contains(WidgetState.pressed)
+                                            ? AppColors.blue100.withValues(
+                                              alpha: 0.2,
+                                            )
+                                            : null,
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  final pickedFile = await _picker.pickImage(
+                                    source: ImageSource.gallery,
+                                  );
+                                  if (pickedFile != null) {
+                                    if (kIsWeb) {
+                                      final bytes =
+                                          await pickedFile.readAsBytes();
+                                      setState(() {
+                                        _selectedImageBytes = bytes;
+                                        _selectedImage = null;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        _selectedImage = File(pickedFile.path);
+                                        _selectedImageBytes = null;
+                                      });
+                                    }
+                                  }
+                                },
+                                child: const Text("Change Profile Image"),
+                              ),
+                            ],
                           ),
                         ),
-                        onPressed: () async {
-                          final pickedFile =
-                          await _picker.pickImage(source: ImageSource.gallery);
-                          if (pickedFile != null) {
-                            if (kIsWeb) {
-                              final bytes = await pickedFile.readAsBytes();
-                              setState(() {
-                                _selectedImageBytes = bytes;
-                                _selectedImage = null;
-                              });
-                            } else {
-                              setState(() {
-                                _selectedImage = File(pickedFile.path);
-                                _selectedImageBytes = null;
-                              });
-                            }
-                          }
-                        },
-                        child: const Text("Change Profile Image"),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                // Personal Info
-                _buildSectionCard(
-                  title: 'Personal Information',
-                  children: [
-                    TextFormField(
-                      controller: _firstNameController,
-                      decoration: _inputDecoration(labelText: 'First Name'),
-                      validator: (v) => v!.isEmpty ? 'Enter first name' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _lastNameController,
-                      decoration: _inputDecoration(labelText: 'Last Name'),
-                      validator: (v) => v!.isEmpty ? 'Enter last name' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: _inputDecoration(labelText: 'Phone Number'),
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [_phoneFormatter],
-                      validator: (value) {
-                        final unmaskedText = value?.replaceAll(RegExp(r'[^0-9]'), '');
-                        if (unmaskedText == null || unmaskedText.length != 10) {
-                          return 'Enter a valid 10-digit phone number';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _facebookController,
-                      decoration:
-                      _inputDecoration(labelText: 'Facebook Username'),
-                    ),
-                  ],
-                ),
+                        // Personal Info
+                        _buildSectionCard(
+                          title: 'Personal Information',
+                          children: [
+                            TextFormField(
+                              controller: _firstNameController,
+                              decoration: _inputDecoration(
+                                labelText: 'First Name',
+                              ),
+                              validator:
+                                  (v) => v!.isEmpty ? 'Enter first name' : null,
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _lastNameController,
+                              decoration: _inputDecoration(
+                                labelText: 'Last Name',
+                              ),
+                              validator:
+                                  (v) => v!.isEmpty ? 'Enter last name' : null,
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _phoneController,
+                              decoration: _inputDecoration(
+                                labelText: 'Phone Number',
+                              ),
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [_phoneFormatter],
+                              validator: (value) {
+                                final unmaskedText = value?.replaceAll(
+                                  RegExp(r'[^0-9]'),
+                                  '',
+                                );
+                                if (unmaskedText == null ||
+                                    unmaskedText.length != 10) {
+                                  return 'Enter a valid 10-digit phone number';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _facebookController,
+                              decoration: _inputDecoration(
+                                labelText: 'Facebook Username',
+                              ),
+                            ),
+                          ],
+                        ),
 
-                const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                // Account Security
-                _buildSectionCard(
-                  title: 'Account Security',
-                  children: [
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.lock_outline),
-                      label: const Text('Change Password'),
-                      onPressed: _changePassword,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.byuiBlue,
-                        side: const BorderSide(color: AppColors.gray200),
-                        minimumSize: const Size(double.infinity, 48),
-                      ),
-                    ),
-                  ],
-                ),
+                        // Account Security
+                        _buildSectionCard(
+                          title: 'Account Security',
+                          children: [
+                            OutlinedButton.icon(
+                              icon: const Icon(Icons.lock_outline),
+                              label: const Text('Change Password'),
+                              onPressed: _changePassword,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.byuiBlue,
+                                side: const BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                            ),
+                          ],
+                        ),
 
-                const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                // BYUI Verification
-                _buildByuiVerificationCard(),
+                        // BYUI Verification
+                        _buildByuiVerificationCard(),
 
-                const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                // Role
-                _buildSectionCard(
-                  title: 'Your Role',
-                  children: [
-                    ToggleButtons(
-                      isSelected: [
-                        _selectedRole == UserRole.rider,
-                        _selectedRole == UserRole.driver
+                        // Role
+                        _buildSectionCard(
+                          title: 'Your Role',
+                          children: [
+                            ToggleButtons(
+                              isSelected: [
+                                _selectedRole == UserRole.rider,
+                                _selectedRole == UserRole.driver,
+                              ],
+                              onPressed:
+                                  (index) => setState(
+                                    () =>
+                                        _selectedRole =
+                                            index == 0
+                                                ? UserRole.rider
+                                                : UserRole.driver,
+                                  ),
+                              borderRadius: BorderRadius.circular(8.0),
+                              selectedColor: Colors.white,
+                              fillColor: AppColors.byuiBlue,
+                              color: AppColors.byuiBlue,
+                              constraints: BoxConstraints(
+                                minHeight: 48.0,
+                                minWidth:
+                                    (MediaQuery.of(context).size.width - 110) /
+                                    2,
+                              ),
+                              children: const [Text('Rider'), Text('Driver')],
+                            ),
+                          ],
+                        ),
+
+                        if (_selectedRole == UserRole.driver) ...[
+                          const SizedBox(height: 24),
+                          _buildSectionCard(
+                            title: 'Vehicle Information',
+                            children: [
+                              TextFormField(
+                                controller: _vehicleMakeController,
+                                decoration: _inputDecoration(
+                                  labelText: 'Vehicle Make',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _vehicleModelController,
+                                decoration: _inputDecoration(
+                                  labelText: 'Vehicle Model',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _vehicleColorController,
+                                decoration: _inputDecoration(
+                                  labelText: 'Vehicle Color',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _vehicleYearController,
+                                decoration: _inputDecoration(
+                                  labelText: 'Vehicle Year',
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
-                      onPressed: (index) => setState(() =>
-                      _selectedRole =
-                      index == 0 ? UserRole.rider : UserRole.driver),
-                      borderRadius: BorderRadius.circular(8.0),
-                      selectedColor: Colors.white,
-                      fillColor: AppColors.byuiBlue,
-                      color: AppColors.byuiBlue,
-                      constraints: BoxConstraints(
-                        minHeight: 48.0,
-                        minWidth:
-                        (MediaQuery.of(context).size.width - 110) / 2,
-                      ),
-                      children: const [Text('Rider'), Text('Driver')],
                     ),
-                  ],
-                ),
+                  ),
 
-                if (_selectedRole == UserRole.driver) ...[
-                  const SizedBox(height: 24),
-                  _buildSectionCard(
-                    title: 'Vehicle Information',
-                    children: [
-                      TextFormField(
-                        controller: _vehicleMakeController,
-                        decoration: _inputDecoration(labelText: 'Vehicle Make'),
+                  // Save button
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16.0),
+                      color: AppColors.gray50,
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : _saveChanges,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.byuiBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child:
+                            _isSaving
+                                ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                       ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _vehicleModelController,
-                        decoration: _inputDecoration(labelText: 'Vehicle Model'),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _vehicleColorController,
-                        decoration: _inputDecoration(labelText: 'Vehicle Color'),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _vehicleYearController,
-                        decoration: _inputDecoration(labelText: 'Vehicle Year'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
+                    ),
                   ),
                 ],
-              ],
-            ),
-          ),
-
-          // Save button
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              color: AppColors.gray50,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.byuiBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: _isSaving
-                    ? const SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 3, color: Colors.white),
-                )
-                    : const Text('Save Changes',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -574,25 +662,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 48),
             ),
-            child: _sendingByuiEmail
-                ? const SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
-            )
-                : Text(
-              (_byuiEmail == null || _byuiEmail!.isEmpty)
-                  ? 'Send verification link'
-                  : (_canResendByui
-                  ? 'Resend verification link'
-                  : 'Resend available in ${_resendRemaining}s'),
-            ),
+            child:
+                _sendingByuiEmail
+                    ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Text(
+                      (_byuiEmail == null || _byuiEmail!.isEmpty)
+                          ? 'Send verification link'
+                          : (_canResendByui
+                              ? 'Resend verification link'
+                              : 'Resend available in ${_resendRemaining}s'),
+                    ),
           ),
           const SizedBox(height: 8),
 
           const Text(
             "Allow up to 2 minutes for delivery. Check spam if not found.",
-            style: TextStyle(fontSize: 13, color: AppColors.textGray500, height: 1.3),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textGray500,
+              height: 1.3,
+            ),
           ),
         ],
       ],
@@ -629,8 +725,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           foregroundColor: AppColors.byuiBlue,
         ).copyWith(
           overlayColor: WidgetStateProperty.resolveWith(
-                (states) =>
-            states.contains(WidgetState.pressed) ? AppColors.blue100.withValues(alpha: 0.2) : null,
+            (states) =>
+                states.contains(WidgetState.pressed)
+                    ? AppColors.blue100.withValues(alpha: 0.2)
+                    : null,
           ),
         ),
       ),
@@ -644,44 +742,51 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => Theme(
-        data: themed,
-        child: AlertDialog(
-          title: const Text(
-            'Verify BYUI Email',
-            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textGray600),
-          ),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: controller,
-              decoration: _inputDecoration(labelText: 'BYUI email (e.g., name@byui.edu)'),
-              keyboardType: TextInputType.emailAddress,
-              validator: (v) {
-                final value = (v ?? '').trim().toLowerCase();
-                if (value.isEmpty) return 'Enter your BYUI email';
-                final re = RegExp(r'^[a-zA-Z0-9._%+\-]+@byui\.edu$');
-                if (!re.hasMatch(value)) return 'Email must end with @byui.edu';
-                return null;
-              },
+      builder:
+          (context) => Theme(
+            data: themed,
+            child: AlertDialog(
+              title: const Text(
+                'Verify BYUI Email',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textGray600,
+                ),
+              ),
+              content: Form(
+                key: formKey,
+                child: TextFormField(
+                  controller: controller,
+                  decoration: _inputDecoration(
+                    labelText: 'BYUI email (e.g., name@byui.edu)',
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) {
+                    final value = (v ?? '').trim().toLowerCase();
+                    if (value.isEmpty) return 'Enter your BYUI email';
+                    final re = RegExp(r'^[a-zA-Z0-9._%+\-]+@byui\.edu$');
+                    if (!re.hasMatch(value))
+                      return 'Email must end with @byui.edu';
+                    return null;
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.of(context).pop(controller.text.trim());
+                    }
+                  },
+                  child: const Text('Send Link'),
+                ),
+              ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.of(context).pop(controller.text.trim());
-                }
-              },
-              child: const Text('Send Link'),
-            ),
-          ],
-        ),
-      ),
     );
 
     if (result != null) {
@@ -710,21 +815,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         .doc(uid)
         .snapshots()
         .listen((snap) {
-      final data = snap.data();
-      final verified = data?['byuiEmailVerified'] == true;
-      final savedEmail = (data?['byuiEmail'] as String?)?.toLowerCase() ?? '';
-      if (verified && savedEmail == email.toLowerCase()) {
-        _verifyWatch?.cancel();
-        if (!mounted) return;
-        setState(() {
-          _byuiVerified = true;
-          _byuiEmail = savedEmail;
+          final data = snap.data();
+          final verified = data?['byuiEmailVerified'] == true;
+          final savedEmail =
+              (data?['byuiEmail'] as String?)?.toLowerCase() ?? '';
+          if (verified && savedEmail == email.toLowerCase()) {
+            _verifyWatch?.cancel();
+            if (!mounted) return;
+            setState(() {
+              _byuiVerified = true;
+              _byuiEmail = savedEmail;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('BYUI email verified.')),
+            );
+          }
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('BYUI email verified.')),
-        );
-      }
-    });
 
     Timer.periodic(const Duration(seconds: 1), (t) {
       secondsLeft--;
@@ -779,9 +885,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send link: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send link: $e')));
       }
     } finally {
       if (mounted) setState(() => _sendingByuiEmail = false);
@@ -805,7 +911,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -816,9 +925,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textGray600,
+            ),
+          ),
           const SizedBox(height: 20),
           ...children,
         ],
@@ -864,9 +978,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               foregroundColor: AppColors.byuiBlue,
             ).copyWith(
               overlayColor: WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.pressed)
-                    ? AppColors.blue100.withValues(alpha: 0.2)
-                    : null,
+                (states) =>
+                    states.contains(WidgetState.pressed)
+                        ? AppColors.blue100.withValues(alpha: 0.2)
+                        : null,
               ),
             ),
           ),
@@ -879,64 +994,88 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         );
 
         return StatefulBuilder(
-          builder: (context, setState) => Theme(
-            data: themed,
-            child: AlertDialog(
-              title: const Text(
-                "Change Password",
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textGray600),
-              ),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: currentPasswordController,
-                      obscureText: obscureCurrent,
-                      decoration: _inputDecoration(labelText: 'Current Password').copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => obscureCurrent = !obscureCurrent),
-                        ),
-                      ),
-                      validator: (v) => v!.isEmpty ? 'Cannot be empty' : null,
+          builder:
+              (context, setState) => Theme(
+                data: themed,
+                child: AlertDialog(
+                  title: const Text(
+                    "Change Password",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textGray600,
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: newPasswordController,
-                      obscureText: obscureNew,
-                      decoration: _inputDecoration(labelText: 'New Password').copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => obscureNew = !obscureNew),
+                  ),
+                  content: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: currentPasswordController,
+                          obscureText: obscureCurrent,
+                          decoration: _inputDecoration(
+                            labelText: 'Current Password',
+                          ).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                obscureCurrent
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed:
+                                  () => setState(
+                                    () => obscureCurrent = !obscureCurrent,
+                                  ),
+                            ),
+                          ),
+                          validator:
+                              (v) => v!.isEmpty ? 'Cannot be empty' : null,
                         ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Cannot be empty';
-                        if (v.length < 6) return 'Must be at least 6 characters';
-                        return null;
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: newPasswordController,
+                          obscureText: obscureNew,
+                          decoration: _inputDecoration(
+                            labelText: 'New Password',
+                          ).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                obscureNew
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed:
+                                  () =>
+                                      setState(() => obscureNew = !obscureNew),
+                            ),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty)
+                              return 'Cannot be empty';
+                            if (v.length < 6)
+                              return 'Must be at least 6 characters';
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          Navigator.of(context).pop(true);
+                        }
                       },
+                      child: const Text("Change"),
                     ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      Navigator.of(context).pop(true);
-                    }
-                  },
-                  child: const Text("Change"),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );
@@ -945,7 +1084,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       try {
         final user = FirebaseAuth.instance.currentUser;
         final email = user?.email;
-        if (user == null || email == null) throw Exception("User not signed in");
+        if (user == null || email == null)
+          throw Exception("User not signed in");
 
         final cred = EmailAuthProvider.credential(
           email: email,
@@ -963,7 +1103,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to change password: ${e.toString()}")),
+            SnackBar(
+              content: Text("Failed to change password: ${e.toString()}"),
+            ),
           );
         }
       }

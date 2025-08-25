@@ -37,9 +37,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       User? user = userCredential.user;
       if (user != null) {
@@ -63,7 +63,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-              (Route<dynamic> route) => false,
+          (Route<dynamic> route) => false,
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -76,13 +76,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         message = e.message ?? 'An unknown authentication error occurred.';
       }
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('An error occurred: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('An error occurred: $e')));
       }
     } finally {
       if (mounted) {
@@ -111,22 +113,43 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Create Account', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
-                      Text('Join BYUI Rideshare', style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                      Text(
+                        'Create Account',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24.0,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Join BYUI Rideshare',
+                        style: TextStyle(
+                          color: AppColors.blue100,
+                          fontSize: 14.0,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 32.0,
+              ),
               child: Container(
                 padding: const EdgeInsets.all(24.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8.0),
                   border: Border.all(color: AppColors.gray200),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10.0)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10.0,
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,8 +159,19 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: "Email",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          borderSide: const BorderSide(
+                            color: AppColors.gray300,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          borderSide: const BorderSide(
+                            color: AppColors.inputFocusBlue,
+                            width: 2.0,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16.0),
@@ -146,11 +180,30 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       obscureText: !_showPassword,
                       decoration: InputDecoration(
                         hintText: "Password",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          borderSide: const BorderSide(
+                            color: AppColors.gray300,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          borderSide: const BorderSide(
+                            color: AppColors.inputFocusBlue,
+                            width: 2.0,
+                          ),
+                        ),
                         suffixIcon: IconButton(
-                          icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: AppColors.textGray500),
-                          onPressed: () => setState(() => _showPassword = !_showPassword),
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: AppColors.textGray500,
+                          ),
+                          onPressed:
+                              () => setState(
+                                () => _showPassword = !_showPassword,
+                              ),
                         ),
                       ),
                     ),
@@ -162,11 +215,24 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.byuiBlue,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
                         ),
-                        child: _isLoading
-                            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                            : const Text('Create Account', style: TextStyle(fontWeight: FontWeight.w500)),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'Create Account',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
                       ),
                     ),
                   ],

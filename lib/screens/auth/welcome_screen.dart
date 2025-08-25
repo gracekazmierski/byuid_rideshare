@@ -36,7 +36,12 @@ class WelcomeScreen extends StatelessWidget {
           // Header Section
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16.0, 60.0, 16.0, 24.0), // Adjusted padding for status bar
+            padding: const EdgeInsets.fromLTRB(
+              16.0,
+              60.0,
+              16.0,
+              24.0,
+            ), // Adjusted padding for status bar
             color: AppColors.byuiBlue, // 'bg-byui-blue'
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,17 +69,25 @@ class WelcomeScreen extends StatelessWidget {
           // Main Content Section
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0), // 'px-6 py-8'
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 32.0,
+              ), // 'px-6 py-8'
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 448), // 'max-w-md'
+                  constraints: const BoxConstraints(
+                    maxWidth: 448,
+                  ), // 'max-w-md'
                   child: Container(
                     padding: const EdgeInsets.all(32.0), // 'p-8'
                     decoration: BoxDecoration(
                       color: Colors.white, // 'bg-white'
                       borderRadius: BorderRadius.circular(8.0), // 'rounded-lg'
-                      border: Border.all(color: Colors.grey.shade300), // 'border'
-                      boxShadow: [ // 'shadow-sm'
+                      border: Border.all(
+                        color: Colors.grey.shade300,
+                      ), // 'border'
+                      boxShadow: [
+                        // 'shadow-sm'
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
                           blurRadius: 10.0,
@@ -98,12 +111,14 @@ class WelcomeScreen extends StatelessWidget {
                               rideshareIconSvg,
                               width: 32.0, // 'w-8'
                               height: 32.0, // 'h-8'
-                              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), // 'text-white'
+                              colorFilter: const ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ), // 'text-white'
                             ),
                           ),
                         ),
                         const SizedBox(height: 24.0), // 'space-y-6'
-
                         // Description
                         const Text(
                           'Connect with students for safe and convenient rides.',
@@ -114,7 +129,6 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 24.0), // 'space-y-6'
-
                         // Buttons
                         SizedBox(
                           width: double.infinity, // 'w-full'
@@ -124,10 +138,13 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.pushNamed(context, '/login');
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.byuiBlue, // 'bg-byui-blue'
+                              backgroundColor:
+                                  AppColors.byuiBlue, // 'bg-byui-blue'
                               foregroundColor: Colors.white, // 'text-white'
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0), // 'rounded-lg'
+                                borderRadius: BorderRadius.circular(
+                                  8.0,
+                                ), // 'rounded-lg'
                               ),
                               textStyle: const TextStyle(
                                 fontWeight: FontWeight.w500, // 'font-medium'
@@ -145,32 +162,45 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.pushNamed(context, '/create_account');
                             },
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.byuiBlue, // 'text-byui-blue'
-                              side: const BorderSide(color: AppColors.byuiBlue), // 'border-byui-blue'
+                              foregroundColor:
+                                  AppColors.byuiBlue, // 'text-byui-blue'
+                              side: const BorderSide(
+                                color: AppColors.byuiBlue,
+                              ), // 'border-byui-blue'
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0), // 'rounded-lg'
+                                borderRadius: BorderRadius.circular(
+                                  8.0,
+                                ), // 'rounded-lg'
                               ),
                               textStyle: const TextStyle(
                                 fontWeight: FontWeight.w500, // 'font-medium'
                               ),
                             ).copyWith(
                               // Replicates 'hover:bg-byui-blue hover:text-white'
-                                overlayColor: MaterialStateProperty.resolveWith<Color?>(
-                                      (Set<MaterialState> states) {
-                                    if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                      return AppColors.byuiBlue;
-                                    }
-                                    return null; // Defer to the widget's default.
-                                  },
-                                ),
-                                foregroundColor: MaterialStateProperty.resolveWith<Color?>(
-                                      (Set<MaterialState> states) {
-                                    if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                              overlayColor: MaterialStateProperty.resolveWith<
+                                Color?
+                              >((Set<MaterialState> states) {
+                                if (states.contains(MaterialState.hovered) ||
+                                    states.contains(MaterialState.pressed)) {
+                                  return AppColors.byuiBlue;
+                                }
+                                return null; // Defer to the widget's default.
+                              }),
+                              foregroundColor:
+                                  MaterialStateProperty.resolveWith<Color?>((
+                                    Set<MaterialState> states,
+                                  ) {
+                                    if (states.contains(
+                                          MaterialState.hovered,
+                                        ) ||
+                                        states.contains(
+                                          MaterialState.pressed,
+                                        )) {
                                       return Colors.white;
                                     }
-                                    return AppColors.byuiBlue; // Default text color
-                                  },
-                                )
+                                    return AppColors
+                                        .byuiBlue; // Default text color
+                                  }),
                             ),
                             child: const Text('Create an account'),
                           ),

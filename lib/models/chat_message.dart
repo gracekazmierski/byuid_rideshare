@@ -12,11 +12,7 @@ class ChatMessage {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'senderId': senderId,
-      'text': text,
-      'timestamp': timestamp,
-    };
+    return {'senderId': senderId, 'text': text, 'timestamp': timestamp};
   }
 
   factory ChatMessage.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {

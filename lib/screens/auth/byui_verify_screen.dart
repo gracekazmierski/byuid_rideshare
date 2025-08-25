@@ -123,44 +123,51 @@ class _ByuiVerifyScreenState extends State<ByuiVerifyScreen> {
 
     return showDialog<String>(
       context: context,
-      builder: (context) => Theme(
-        data: themed,
-        child: AlertDialog(
-          title: const Text(
-            'Enter your BYUI email',
-            style: TextStyle(color: AppColors.textGray600, fontWeight: FontWeight.bold),
-          ),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'name@byui.edu',
-                border: OutlineInputBorder(),
+      builder:
+          (context) => Theme(
+            data: themed,
+            child: AlertDialog(
+              title: const Text(
+                'Enter your BYUI email',
+                style: TextStyle(
+                  color: AppColors.textGray600,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              validator: (v) {
-                final value = (v ?? '').trim().toLowerCase();
-                final re = RegExp(r'^[a-zA-Z0-9._%+\-]+@byui\.edu$');
-                if (value.isEmpty) return 'Enter your BYUI email';
-                if (!re.hasMatch(value)) return 'Must be @byui.edu';
-                return null;
-              },
-              keyboardType: TextInputType.emailAddress,
+              content: Form(
+                key: formKey,
+                child: TextFormField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'name@byui.edu',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) {
+                    final value = (v ?? '').trim().toLowerCase();
+                    final re = RegExp(r'^[a-zA-Z0-9._%+\-]+@byui\.edu$');
+                    if (value.isEmpty) return 'Enter your BYUI email';
+                    if (!re.hasMatch(value)) return 'Must be @byui.edu';
+                    return null;
+                  },
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(context, controller.text.trim());
+                    }
+                  },
+                  child: const Text('Continue'),
+                ),
+              ],
             ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(context, controller.text.trim());
-                }
-              },
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -230,7 +237,7 @@ class _ByuiVerifyScreenState extends State<ByuiVerifyScreen> {
       // ✅ Bounce straight back to Profile with a success flag
       Navigator.of(context).pushNamedAndRemoveUntil(
         ProfileEditScreen.routeName,
-            (r) => false,
+        (r) => false,
         arguments: {'byuiVerified': true, 'byuiEmail': email},
       );
     } catch (e) {
@@ -273,10 +280,11 @@ class _ByuiVerifyScreenState extends State<ByuiVerifyScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                      ProfileEditScreen.routeName,
+                    onPressed:
+                        () => Navigator.of(context).pushNamedAndRemoveUntil(
+                          ProfileEditScreen.routeName,
                           (r) => false,
-                    ),
+                        ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.byuiBlue,
                       foregroundColor: Colors.white,

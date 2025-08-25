@@ -11,7 +11,9 @@ class MyRequestsScreen extends StatelessWidget {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      return const Center(child: Text('You must be logged in to view ride requests.'));
+      return const Center(
+        child: Text('You must be logged in to view ride requests.'),
+      );
     }
 
     return Scaffold(

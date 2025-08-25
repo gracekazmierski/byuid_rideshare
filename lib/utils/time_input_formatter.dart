@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 class TimeInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final String digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digitsOnly.length > 4) return oldValue;
 
@@ -17,26 +17,26 @@ class TimeInputFormatter extends TextInputFormatter {
     // This logic handles all cases based on the number of digits typed.
     switch (digitsOnly.length) {
       case 0:
-      // Empty case
+        // Empty case
         break;
       case 1:
-      // e.g., "9" -> displays "9"
+        // e.g., "9" -> displays "9"
         hourString = digitsOnly;
         formattedText = hourString;
         break;
       case 2:
-      // e.g., "12" or "90" (as a prefix for 9:00). Treat as a valid intermediate step.
+        // e.g., "12" or "90" (as a prefix for 9:00). Treat as a valid intermediate step.
         hourString = digitsOnly;
         formattedText = hourString;
         break;
       case 3:
-      // e.g., "100" becomes "1:00", "900" becomes "9:00"
+        // e.g., "100" becomes "1:00", "900" becomes "9:00"
         hourString = digitsOnly.substring(0, 1);
         minuteString = digitsOnly.substring(1);
         formattedText = '$hourString:$minuteString';
         break;
       case 4:
-      // e.g., "1230" becomes "12:30"
+        // e.g., "1230" becomes "12:30"
         hourString = digitsOnly.substring(0, 2);
         minuteString = digitsOnly.substring(2);
         formattedText = '$hourString:$minuteString';

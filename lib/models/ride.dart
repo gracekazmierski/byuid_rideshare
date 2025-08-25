@@ -55,8 +55,12 @@ class Ride {
       driverUid: data['driverUid'] as String,
       driverName: data['driverName'] as String? ?? 'Unknown Driver',
       postCreationTime: data['postCreationTime'] as Timestamp,
-      isFull: data['isFull'] as bool? ?? false, // Handle null case for existing docs
-      joinedUserUids: List<String>.from(data['joinedUserUids'] ?? []), // Handle null case
+      isFull:
+          data['isFull'] as bool? ??
+          false, // Handle null case for existing docs
+      joinedUserUids: List<String>.from(
+        data['joinedUserUids'] ?? [],
+      ), // Handle null case
     );
   }
 

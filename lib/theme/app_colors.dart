@@ -5,8 +5,12 @@ import 'package:flutter/material.dart';
 class AppColors {
   // From WelcomeScreen (main BYUI blue, gradient, text grays)
   static const Color byuiBlue = Color(0xFF006EB6); // Your specific BYUI blue
-  static const Color backgroundGradientStart = Color(0xFFEFF6FF); // Tailwind blue-50
-  static const Color backgroundGradientEnd = Color(0xFFDBEAFE);   // Tailwind blue-100
+  static const Color backgroundGradientStart = Color(
+    0xFFEFF6FF,
+  ); // Tailwind blue-50
+  static const Color backgroundGradientEnd = Color(
+    0xFFDBEAFE,
+  ); // Tailwind blue-100
   static const Color textGray600 = Color(0xFF4B5563);
   static const Color textGray500 = Color(0xFF6B7280);
   static const Color byuiGreen = Color(0xFF2D8F47);
@@ -16,7 +20,9 @@ class AppColors {
   static const Color gray50 = Color(0xFFF9FAFB);
 
   // Specific blue used in the header (bg-[#006eb6]) and primary button, focus border/ring
-  static const Color headerAndPrimaryBlue = Color(0xFF006EB6); // This is your 'byui-blue' again, can reuse.
+  static const Color headerAndPrimaryBlue = Color(
+    0xFF006EB6,
+  ); // This is your 'byui-blue' again, can reuse.
 
   // Text color for the sub-header in the blue header (text-blue-100)
   static const Color blue100 = Color(0xFFDBEAFE);
@@ -31,7 +37,9 @@ class AppColors {
   static const Color gray300 = Color(0xFFD1D5DB);
 
   // Input focus color (focus:border-[#006eb6] focus:ring-[#006eb6])
-  static const Color inputFocusBlue = Color(0xFF006EB6); // Same as headerAndPrimaryBlue
+  static const Color inputFocusBlue = Color(
+    0xFF006EB6,
+  ); // Same as headerAndPrimaryBlue
 
   // Password toggle icon/text (text-gray-500) - already have textGray500
   // Hover text for password toggle (hover:text-gray-700)
@@ -45,5 +53,7 @@ class AppColors {
   static const Color textGray800 = Color(0xFF1F2937);
 
   // Sign In button hover background (hover:bg-[#005a9a])
-  static const Color byuiBlueHover = Color(0xFF005A9A); // A slightly darker shade of byuiBlue
+  static const Color byuiBlueHover = Color(
+    0xFF005A9A,
+  ); // A slightly darker shade of byuiBlue
 }

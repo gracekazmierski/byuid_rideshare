@@ -86,13 +86,21 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
     final requestDate = widget.request.requestDate.toDate();
     final rideTime = _parseTimeWithAmPm(_timeController.text, _selectedAmPm);
 
-    if(rideTime == null){
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a valid time and AM/PM.')));
+    if (rideTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a valid time and AM/PM.')),
+      );
       setState(() => _isLoading = false);
       return;
     }
 
-    final finalDateTime = DateTime(requestDate.year, requestDate.month, requestDate.day, rideTime.hour, rideTime.minute);
+    final finalDateTime = DateTime(
+      requestDate.year,
+      requestDate.month,
+      requestDate.day,
+      rideTime.hour,
+      rideTime.minute,
+    );
 
     try {
       final Ride newRide = await PostedRequestService.fulfillRideRequest(
@@ -111,30 +119,42 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => RideConfirmationScreen(
-              ride: newRide,
-            ),
+            builder: (context) => RideConfirmationScreen(ride: newRide),
           ),
-              (route) => false,
+          (route) => false,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to post offer: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to post offer: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  InputDecoration _inputDecoration({required String labelText, Widget? suffixIcon}) {
+  InputDecoration _inputDecoration({
+    required String labelText,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       labelText: labelText,
       labelStyle: const TextStyle(color: AppColors.textGray600),
       floatingLabelStyle: const TextStyle(color: AppColors.byuiBlue),
       suffixIcon: suffixIcon,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: AppColors.gray300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(
+          color: AppColors.inputFocusBlue,
+          width: 2.0,
+        ),
+      ),
     );
   }
 
@@ -148,15 +168,28 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
             children: [
-              IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.of(context).pop()),
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
               const SizedBox(width: 8),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Offer Ride', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Offer Ride',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   SizedBox(height: 2.0),
-                  Text("Fulfilling a student's request", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(
+                    "Fulfilling a student's request",
+                    style: TextStyle(color: AppColors.blue100, fontSize: 14.0),
+                  ),
                 ],
               ),
             ],
@@ -166,7 +199,10 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -177,7 +213,14 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.byuiBlue)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.byuiBlue,
+            ),
+          ),
           const SizedBox(height: 20),
           ...children,
         ],
@@ -224,16 +267,28 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
                   style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Available Seats'),
                   keyboardType: TextInputType.number,
-                  validator: (v) => (v == null || v.isEmpty || int.tryParse(v) == null) ? 'Enter a valid number' : null,
+                  validator:
+                      (v) =>
+                          (v == null || v.isEmpty || int.tryParse(v) == null)
+                              ? 'Enter a valid number'
+                              : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _fareController,
                   style: grayInputTextStyle,
                   focusNode: _fareFocusNode,
-                  decoration: _inputDecoration(labelText: 'Fare per person (\$)'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) => (v == null || v.isEmpty || double.tryParse(v) == null) ? 'Enter a valid fare' : null,
+                  decoration: _inputDecoration(
+                    labelText: 'Fare per person (\$)',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator:
+                      (v) =>
+                          (v == null || v.isEmpty || double.tryParse(v) == null)
+                              ? 'Enter a valid fare'
+                              : null,
                 ),
               ],
             ),
@@ -242,7 +297,9 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
               title: 'Schedule',
               children: [
                 TextFormField(
-                  initialValue: DateFormat('EEEE, MMMM d, yyyy').format(widget.request.requestDate.toDate()),
+                  initialValue: DateFormat(
+                    'EEEE, MMMM d, yyyy',
+                  ).format(widget.request.requestDate.toDate()),
                   readOnly: true,
                   style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Date'),
@@ -253,7 +310,10 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
                   style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Time (e.g., 2:40)'),
                   keyboardType: TextInputType.datetime,
-                  inputFormatters: [LengthLimitingTextInputFormatter(5), TimeInputFormatter()],
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(5),
+                    TimeInputFormatter(),
+                  ],
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Please enter a time';
                     final parts = v.split(':');
@@ -262,8 +322,11 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
                       final int hour = int.parse(parts[0]);
                       final int minute = int.parse(parts[1]);
                       if (hour < 1 || hour > 12) return 'Hour must be 1-12';
-                      if (minute < 0 || minute > 59) return 'Minute must be 0-59';
-                    } catch (e) { return 'Invalid numbers'; }
+                      if (minute < 0 || minute > 59)
+                        return 'Minute must be 0-59';
+                    } catch (e) {
+                      return 'Invalid numbers';
+                    }
                     if (_selectedAmPm == null) return 'Please select AM or PM';
                     return null;
                   },
@@ -279,12 +342,20 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
                     selected: <AmPm>{if (_selectedAmPm != null) _selectedAmPm!},
                     onSelectionChanged: (Set<AmPm> newSelection) {
                       setState(() {
-                        _selectedAmPm = newSelection.isEmpty ? null : newSelection.first;
+                        _selectedAmPm =
+                            newSelection.isEmpty ? null : newSelection.first;
                       });
                     },
                     emptySelectionAllowed: true,
                     showSelectedIcon: false,
-                    style: SegmentedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.byuiBlue, selectedBackgroundColor: AppColors.byuiBlue, selectedForegroundColor: Colors.white, minimumSize: const Size.fromHeight(40), side: const BorderSide(color: AppColors.gray300)),
+                    style: SegmentedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.byuiBlue,
+                      selectedBackgroundColor: AppColors.byuiBlue,
+                      selectedForegroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(40),
+                      side: const BorderSide(color: AppColors.gray300),
+                    ),
                   ),
                 ),
               ],
@@ -294,10 +365,30 @@ class _FulfillRequestScreenState extends State<FulfillRequestScreen> {
               height: 48.0,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitOffer,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.byuiBlue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))),
-                child: _isLoading
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                    : const Text('Post Offer', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.byuiBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child:
+                    _isLoading
+                        ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text(
+                          'Post Offer',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
               ),
             ),
           ],

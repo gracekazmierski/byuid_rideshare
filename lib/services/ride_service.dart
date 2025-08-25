@@ -10,8 +10,8 @@ import 'package:rxdart/rxdart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RideService {
-  static final CollectionReference ridesCollection =
-    FirebaseFirestore.instance.collection('rides');
+  static final CollectionReference ridesCollection = FirebaseFirestore.instance
+      .collection('rides');
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // save rides to firestore
@@ -19,8 +19,11 @@ class RideService {
     try {
       // When saving, if the ride has no ID (new ride), add it and set the ID
       // Otherwise, update the existing document.
-      if (ride.id.isEmpty) { // Assuming an empty ID means new ride
-        DocumentReference docRef = await ridesCollection.add(ride.toFirestore());
+      if (ride.id.isEmpty) {
+        // Assuming an empty ID means new ride
+        DocumentReference docRef = await ridesCollection.add(
+          ride.toFirestore(),
+        );
         // You might want to update the local ride object's ID here if needed
         print('Ride saved successfully with ID: ${docRef.id}');
       } else {
@@ -55,7 +58,7 @@ class RideService {
       await rideRef.update({
         'joinedUserUids': FieldValue.arrayRemove([user.uid]),
         'availableSeats': FieldValue.increment(1),
-        'isFull': false // A seat is now guaranteed to be available
+        'isFull': false, // A seat is now guaranteed to be available
       });
     } catch (e) {
       print('Error leaving ride: $e');
@@ -65,8 +68,13 @@ class RideService {
   }
 
   // driver can remove passengers
-  static Future<void> removePassenger(String rideId, String passengerUid) async {
-    DocumentReference rideRef = FirebaseFirestore.instance.collection('rides').doc(rideId);
+  static Future<void> removePassenger(
+    String rideId,
+    String passengerUid,
+  ) async {
+    DocumentReference rideRef = FirebaseFirestore.instance
+        .collection('rides')
+        .doc(rideId);
     await FirebaseFirestore.instance.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(rideRef);
       if (!snapshot.exists) return;
@@ -90,21 +98,36 @@ class RideService {
   static Stream<List<Ride>> fetchRideHistory(String userId) {
     final firestore = FirebaseFirestore.instance;
     final completed = firestore.collection('completed_rides');
-    final driverQuery = completed.where('driverUid', isEqualTo: userId).orderBy('rideDate', descending: true).snapshots();
-    final riderQuery = completed.where('joinedUserUids', arrayContains: userId).orderBy('rideDate', descending: true).snapshots();
+    final driverQuery =
+        completed
+            .where('driverUid', isEqualTo: userId)
+            .orderBy('rideDate', descending: true)
+            .snapshots();
+    final riderQuery =
+        completed
+            .where('joinedUserUids', arrayContains: userId)
+            .orderBy('rideDate', descending: true)
+            .snapshots();
 
-    return Rx.combineLatest2(
-      driverQuery,
-      riderQuery,
-        (QuerySnapshot driverSnap, QuerySnapshot riderSnap) {
-          final allDocs = [...driverSnap.docs, ...riderSnap.docs];
-          final seen = <String>{}; // used to avoid duplication/duplicates
-          final rides = allDocs.where((doc) => seen.add(doc.id)).map((doc) => Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>)).toList();
+    return Rx.combineLatest2(driverQuery, riderQuery, (
+      QuerySnapshot driverSnap,
+      QuerySnapshot riderSnap,
+    ) {
+      final allDocs = [...driverSnap.docs, ...riderSnap.docs];
+      final seen = <String>{}; // used to avoid duplication/duplicates
+      final rides =
+          allDocs
+              .where((doc) => seen.add(doc.id))
+              .map(
+                (doc) => Ride.fromFirestore(
+                  doc as DocumentSnapshot<Map<String, dynamic>>,
+                ),
+              )
+              .toList();
 
-          rides.sort((a, b) => b.rideDate.compareTo(a.rideDate));
-          return rides;
-        },
-    );
+      rides.sort((a, b) => b.rideDate.compareTo(a.rideDate));
+      return rides;
+    });
   }
 
   /// Fetches a stream of ride listings ordered by rideDate.
@@ -124,11 +147,17 @@ class RideService {
     }
 
     if (startDate != null) {
-      query = query.where('rideDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+      query = query.where(
+        'rideDate',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+      );
     }
 
     if (endDate != null) {
-      query = query.where('rideDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+      query = query.where(
+        'rideDate',
+        isLessThanOrEqualTo: Timestamp.fromDate(endDate),
+      );
     }
 
     switch (sortOption) {
@@ -147,28 +176,33 @@ class RideService {
     }
 
     return query.snapshots().map((snapshot) {
-      List<Ride> rides = snapshot.docs
-          .map((doc) =>
-          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
-          .toList();
+      List<Ride> rides =
+          snapshot.docs
+              .map(
+                (doc) => Ride.fromFirestore(
+                  doc as DocumentSnapshot<Map<String, dynamic>>,
+                ),
+              )
+              .toList();
 
       if (fromLocation != null && fromLocation.isNotEmpty) {
         final lowerFrom = fromLocation.toLowerCase();
-        rides = rides
-            .where((r) => r.origin.toLowerCase().contains(lowerFrom))
-            .toList();
+        rides =
+            rides
+                .where((r) => r.origin.toLowerCase().contains(lowerFrom))
+                .toList();
       }
 
       if (toLocation != null && toLocation.isNotEmpty) {
         final lowerTo = toLocation.toLowerCase();
-        rides = rides
-            .where((r) => r.destination.toLowerCase().contains(lowerTo))
-            .toList();
+        rides =
+            rides
+                .where((r) => r.destination.toLowerCase().contains(lowerTo))
+                .toList();
       }
 
       return rides;
     });
-
 
     // return ridesCollection
     //     .orderBy('rideDate', descending: false) // Order by date, earliest first
@@ -211,18 +245,23 @@ class RideService {
         .orderBy('rideDate', descending: false) // Optional: order by date
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) =>
-          Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>))
-          .toList();
-    });
+          return snapshot.docs
+              .map(
+                (doc) => Ride.fromFirestore(
+                  doc as DocumentSnapshot<Map<String, dynamic>>,
+                ),
+              )
+              .toList();
+        });
   }
 
   /// Fetches a stream for a single ride by its ID for real-time updates.
   static Stream<Ride> getRideStream(String rideId) {
     return ridesCollection.doc(rideId).snapshots().map((doc) {
       if (doc.exists) {
-        return Ride.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>);
+        return Ride.fromFirestore(
+          doc as DocumentSnapshot<Map<String, dynamic>>,
+        );
       } else {
         throw Exception("Ride not found"); // Or return a default/null value
       }
@@ -231,7 +270,10 @@ class RideService {
 
   // user can request to join ride using the button
   static Future<void> requestToJoinRide(
-    String rideId, String riderUid, String message) async {
+    String rideId,
+    String riderUid,
+    String message,
+  ) async {
     try {
       // Get the ride to retrieve its driverUid
       final rideDoc = await _firestore.collection('rides').doc(rideId).get();
@@ -255,13 +297,19 @@ class RideService {
   }
 
   // shows driver list of requests made from riders
-  static Stream<List<RideRequest>> fetchRideRequestsForDriver(String driverUid) {
+  static Stream<List<RideRequest>> fetchRideRequestsForDriver(
+    String driverUid,
+  ) {
     return _firestore
         .collection('ride_requests')
         .where('driverUid', isEqualTo: driverUid)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => RideRequest.fromMap(d.data(), d.id)).toList()); 
+        .map(
+          (snap) =>
+              snap.docs
+                  .map((d) => RideRequest.fromMap(d.data(), d.id))
+                  .toList(),
+        );
   }
 
   // list of pending requests that need an answer
@@ -271,13 +319,20 @@ class RideService {
         .where('rideId', isEqualTo: rideId)
         .where('status', isEqualTo: 'pending')
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((doc) => RideRequest.fromMap(doc.data(), doc.id)).toList());
+        .map(
+          (snap) =>
+              snap.docs
+                  .map((doc) => RideRequest.fromMap(doc.data(), doc.id))
+                  .toList(),
+        );
   }
 
   // ability to accept ride
   static Future<void> acceptRideRequest(
-    String requestId, String rideId, String riderUid) async {
+    String requestId,
+    String rideId,
+    String riderUid,
+  ) async {
     final rideRef = _firestore.collection('rides').doc(rideId);
     final requestRef = _firestore.collection('ride_requests').doc(requestId);
 
@@ -300,7 +355,8 @@ class RideService {
       transaction.update(rideRef, {
         'joinedUserUids': updatedJoined,
         'availableSeats': updatedSeats,
-        'driverUid': driverUid, // 🔐 include this so Firestore knows it didn't change
+        'driverUid':
+            driverUid, // 🔐 include this so Firestore knows it didn't change
       });
 
       transaction.delete(requestRef);
@@ -318,9 +374,14 @@ class RideService {
         .collection('ride_requests')
         .where('riderUid', isEqualTo: riderUid)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => RideRequest.fromMap(d.data(), d.id)).toList());
+        .map(
+          (snap) =>
+              snap.docs
+                  .map((d) => RideRequest.fromMap(d.data(), d.id))
+                  .toList(),
+        );
   }
-  
+
   /// Fetches a list of joined rides based on the userID
   static Stream<List<Ride>> fetchJoinedRideListings(String? passengerUid) {
     return FirebaseFirestore.instance
@@ -328,14 +389,15 @@ class RideService {
         .where('joinedUserUids', arrayContains: passengerUid)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => Ride.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs.map((doc) => Ride.fromFirestore(doc)).toList();
+        });
   }
 
   // shows users name instead of ID
   static Future<String?> getUserNameByUid(String uid) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists) {
         return doc.data()?['name'] ?? 'Unknown Rider';
       }
@@ -358,7 +420,9 @@ class RideService {
           throw Exception("Ride no longer exists.");
         }
 
-        final Ride ride = Ride.fromFirestore(snapshot as DocumentSnapshot<Map<String, dynamic>>);
+        final Ride ride = Ride.fromFirestore(
+          snapshot as DocumentSnapshot<Map<String, dynamic>>,
+        );
 
         if (ride.isFull || ride.availableSeats <= 0) {
           throw Exception("This ride is already full!");
@@ -388,7 +452,10 @@ class RideService {
       });
       return null; // Success
     } catch (e) {
-      return e.toString().replaceFirst('Exception: ', ''); // Return error message
+      return e.toString().replaceFirst(
+        'Exception: ',
+        '',
+      ); // Return error message
     }
   }
 }

@@ -35,9 +35,19 @@ class MyJoinedRidesScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('My Joined Rides', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  Text(
+                    'My Joined Rides',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   SizedBox(height: 2.0),
-                  Text("View the rides you have joined", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(
+                    "View the rides you have joined",
+                    style: TextStyle(color: AppColors.blue100, fontSize: 14.0),
+                  ),
                 ],
               ),
             ],
@@ -51,7 +61,10 @@ class MyJoinedRidesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      return Scaffold(appBar: _buildAppBar(context), body: const Center(child: Text('Please log in.')));
+      return Scaffold(
+        appBar: _buildAppBar(context),
+        body: const Center(child: Text('Please log in.')),
+      );
     }
 
     final buttonStyle = ElevatedButton.styleFrom(
@@ -68,25 +81,45 @@ class MyJoinedRidesScreen extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-            child: Text('Joined Rides', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+            child: Text(
+              'Joined Rides',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textGray600,
+              ),
+            ),
           ),
           StreamBuilder<List<Ride>>(
             stream: RideService.fetchJoinedRideListings(currentUser.uid),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+              if (snapshot.connectionState == ConnectionState.waiting)
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
 
               final rides = snapshot.data ?? [];
               return Column(
                 children: [
                   if (rides.isEmpty)
-                    const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('You have not joined any rides.')))
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('You have not joined any rides.'),
+                      ),
+                    )
                   else
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       itemCount: rides.length,
-                      itemBuilder: (context, index) => _buildRideCard(context, rides[index]),
+                      itemBuilder:
+                          (context, index) =>
+                              _buildRideCard(context, rides[index]),
                     ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -101,7 +134,9 @@ class MyJoinedRidesScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const RideListScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => const RideListScreen(),
+                              ),
                             );
                           },
                         ),
@@ -115,25 +150,45 @@ class MyJoinedRidesScreen extends StatelessWidget {
           const Divider(height: 32, indent: 16, endIndent: 16),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text('Pending Requests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+            child: Text(
+              'Pending Requests',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textGray600,
+              ),
+            ),
           ),
           StreamBuilder<List<PostedRequest>>(
             stream: PostedRequestService.fetchJoinedRideRequests(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+              if (snapshot.connectionState == ConnectionState.waiting)
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
 
               final requests = snapshot.data ?? [];
               return Column(
                 children: [
                   if (requests.isEmpty)
-                    const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('You have not joined any ride requests.')))
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('You have not joined any ride requests.'),
+                      ),
+                    )
                   else
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       itemCount: requests.length,
-                      itemBuilder: (context, index) => JoinedRequestCard(request: requests[index]),
+                      itemBuilder:
+                          (context, index) =>
+                              JoinedRequestCard(request: requests[index]),
                     ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -147,7 +202,9 @@ class MyJoinedRidesScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const RideListScreen()), // Note: May need a dedicated request list screen
+                              MaterialPageRoute(
+                                builder: (context) => const RideListScreen(),
+                              ), // Note: May need a dedicated request list screen
                             );
                           },
                         ),
@@ -174,45 +231,126 @@ class MyJoinedRidesScreen extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RideDetailScreen(ride: ride))),
+        onTap:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RideDetailScreen(ride: ride),
+              ),
+            ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.byuiGreen, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(right: 8)),
-                Text(ride.origin, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-              ]),
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.byuiGreen,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    margin: const EdgeInsets.only(right: 8),
+                  ),
+                  Text(
+                    ride.origin,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray700,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
-              Row(children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(right: 8)),
-                Text(ride.destination, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.gray700)),
-              ]),
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.red500,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    margin: const EdgeInsets.only(right: 8),
+                  ),
+                  Text(
+                    ride.destination,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray700,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
-              Row(children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.textGray500),
-                const SizedBox(width: 8),
-                Text(DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()), style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
-              ]),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: AppColors.textGray500,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMM d hh:mm a').format(ride.rideDate.toDate()),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textGray500,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(children: [
-                    const Icon(Icons.group, size: 16, color: AppColors.byuiBlue),
-                    const SizedBox(width: 8),
-                    Text('${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.byuiBlue)),
-                  ]),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.group,
+                        size: 16,
+                        color: AppColors.byuiBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${ride.availableSeats} seat${ride.availableSeats != 1 ? "s" : ""} available',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.byuiBlue,
+                        ),
+                      ),
+                    ],
+                  ),
                   FutureBuilder<String?>(
                     future: UserService.getUserName(ride.driverUid),
                     builder: (context, snapshot) {
                       final name = snapshot.data ?? "Loading...";
-                      return Row(children: [
-                        const CircleAvatar(radius: 12, backgroundColor: Color(0xFFe6f1fa), child: Icon(Icons.person, size: 14, color: AppColors.byuiBlue)),
-                        const SizedBox(width: 4),
-                        Text(name, style: const TextStyle(fontSize: 12, color: AppColors.textGray500)),
-                      ]);
+                      return Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 12,
+                            backgroundColor: Color(0xFFe6f1fa),
+                            child: Icon(
+                              Icons.person,
+                              size: 14,
+                              color: AppColors.byuiBlue,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textGray500,
+                            ),
+                          ),
+                        ],
+                      );
                     },
                   ),
                 ],
@@ -227,9 +365,22 @@ class MyJoinedRidesScreen extends StatelessWidget {
                   ),
                   if (isRideFull)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.red500, borderRadius: BorderRadius.circular(4)),
-                      child: const Text('Full', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.red500,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Full',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -242,11 +393,14 @@ class MyJoinedRidesScreen extends StatelessWidget {
 
   void _addRideToCalendar(Ride ride) {
     final DateTime rideStart = ride.rideDate.toDate();
-    final DateTime rideEnd = rideStart.add(const Duration(hours: 1)); // Assuming a 1-hour duration for the calendar event
+    final DateTime rideEnd = rideStart.add(
+      const Duration(hours: 1),
+    ); // Assuming a 1-hour duration for the calendar event
 
     final Event event = Event(
       title: 'Ride from ${ride.origin} to ${ride.destination}',
-      description: 'Ride with ${ride.driverName}. Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}.',
+      description:
+          'Ride with ${ride.driverName}. Fare: \$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}.',
       location: 'Departure: ${ride.origin}',
       startDate: rideStart,
       endDate: rideEnd,
@@ -270,7 +424,9 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
 
   @override
   Widget build(BuildContext context) {
-    final dateString = DateFormat('EEEE, MMM d').format(widget.request.requestDate.toDate());
+    final dateString = DateFormat(
+      'EEEE, MMM d',
+    ).format(widget.request.requestDate.toDate());
 
     return Card(
       color: Colors.white,
@@ -291,11 +447,17 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
                     children: [
                       Text(
                         '${widget.request.fromLocation} to ${widget.request.toLocation}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text(dateString, style: const TextStyle(color: AppColors.textGray500)),
+                      Text(
+                        dateString,
+                        style: const TextStyle(color: AppColors.textGray500),
+                      ),
                     ],
                   ),
                 ),
@@ -303,10 +465,20 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Pending', style: TextStyle(color: AppColors.byuiBlue, fontWeight: FontWeight.w500)),
-                    Icon(Icons.hourglass_top_rounded, color: AppColors.byuiBlue, size: 18),
+                    Text(
+                      'Pending',
+                      style: TextStyle(
+                        color: AppColors.byuiBlue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Icon(
+                      Icons.hourglass_top_rounded,
+                      color: AppColors.byuiBlue,
+                      size: 18,
+                    ),
                   ],
-                )
+                ),
               ],
             ),
             const Divider(height: 24),
@@ -319,34 +491,51 @@ class _JoinedRequestCardState extends State<JoinedRequestCard> {
                   builder: (context, snapshot) {
                     return Text(
                       'Requested by ${snapshot.data ?? "..."}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textGray600)
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textGray600,
+                      ),
                     );
                   },
                 ),
                 // The Leave Request button
                 _isLeaving
-                  ? const CircularProgressIndicator()
-                  : TextButton(
+                    ? const CircularProgressIndicator()
+                    : TextButton(
                       onPressed: () async {
                         setState(() => _isLeaving = true);
                         try {
-                          await PostedRequestService.leaveRideRequest(widget.request.id);
-                          if(mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("You left the ride request."), backgroundColor: Colors.green));
+                          await PostedRequestService.leaveRideRequest(
+                            widget.request.id,
+                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("You left the ride request."),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
                           }
                         } catch (e) {
-                          if(mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to leave: $e"), backgroundColor: Colors.red));
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Failed to leave: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           }
                         } finally {
-                          if(mounted) setState(() => _isLeaving = false);
+                          if (mounted) setState(() => _isLeaving = false);
                         }
                       },
-                      style: TextButton.styleFrom(foregroundColor: AppColors.red500),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.red500,
+                      ),
                       child: const Text('Leave'),
                     ),
               ],
-            )
+            ),
           ],
         ),
       ),

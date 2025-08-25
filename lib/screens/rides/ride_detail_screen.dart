@@ -10,7 +10,6 @@ import 'package:byui_rideshare/theme/app_colors.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-
 class RideDetailScreen extends StatefulWidget {
   final Ride ride;
   const RideDetailScreen({super.key, required this.ride});
@@ -33,18 +32,30 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
   void _joinRide(String rideId) async {
     if (_currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in to join.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to join.')),
+      );
       return;
     }
     setState(() => _isProcessing = true);
     try {
       await RideService.requestToJoinRide(rideId, _currentUser!.uid, "");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride request sent!'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ride request sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -57,9 +68,21 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     setState(() => _isProcessing = true);
     try {
       await RideService.acceptRideRequest(requestId, rideId, riderUid);
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request accepted.'), backgroundColor: Colors.green));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Request accepted.'),
+            backgroundColor: Colors.green,
+          ),
+        );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -68,18 +91,36 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
   void _denyRequest(String requestId) async {
     try {
       await RideService.denyRideRequest(requestId);
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request denied.')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Request denied.')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
   void _removePassenger(String rideId, String passengerUid) async {
     try {
       await RideService.removePassenger(rideId, passengerUid);
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passenger removed.')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Passenger removed.')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
@@ -88,10 +129,18 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
       await RideService.cancelRide(rideId);
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride canceled.')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Ride canceled.')));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
@@ -102,7 +151,8 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 
       final Event event = Event(
         title: 'Ride from ${ride.origin} to ${ride.destination}',
-        description: 'Ride Details with RexRide. Fare: \$${ride.fare?.toStringAsFixed(2)}',
+        description:
+            'Ride Details with RexRide. Fare: \$${ride.fare?.toStringAsFixed(2)}',
         location: 'Departure from ${ride.origin}',
         startDate: rideStart,
         endDate: rideEnd,
@@ -111,7 +161,11 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     } else {
       // If on the web, just show a message for now.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add to Calendar is not available on the web version yet.')),
+        const SnackBar(
+          content: Text(
+            'Add to Calendar is not available on the web version yet.',
+          ),
+        ),
       );
     }
   }
@@ -136,9 +190,19 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Ride Details', style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Ride Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   SizedBox(height: 2.0),
-                  Text("View ride information", style: TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(
+                    "View ride information",
+                    style: TextStyle(color: AppColors.blue100, fontSize: 14.0),
+                  ),
                 ],
               ),
             ],
@@ -154,64 +218,91 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
       stream: RideService.getRideStream(widget.ride.id),
       builder: (context, snapshot) {
         final ride = snapshot.data ?? widget.ride;
-        final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
+        final isLoading =
+            snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData;
         final bool rideIsFull = ride.isFull || ride.availableSeats <= 0;
-        final bool hasJoined = _currentUser != null && ride.joinedUserUids.contains(_currentUser!.uid);
-        final bool isDriver = _currentUser != null && ride.driverUid == _currentUser!.uid;
+        final bool hasJoined =
+            _currentUser != null &&
+            ride.joinedUserUids.contains(_currentUser!.uid);
+        final bool isDriver =
+            _currentUser != null && ride.driverUid == _currentUser!.uid;
 
         return Scaffold(
           backgroundColor: AppColors.gray50,
           appBar: _buildAppBar(context),
-          body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-            children: [
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 160), // leave more space at the bottom for 2 buttons
-                children: [
-                  _buildRouteCard(ride),
-                  const SizedBox(height: 16),
-                  _buildDetailsCard(ride),
-                  // ✅ The old button that was here has been removed.
-                  if (isDriver) ...[
-                    const SizedBox(height: 16),
-                    _buildDriverAdminCard(ride),
-                  ],
-                ],
-              ),
-              if (isDriver || hasJoined)
-                Positioned(
-                  bottom: 80,
-                  left: 16,
-                  right: 16,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => RideChatScreen(rideId: ride.id),
+          body:
+              isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Stack(
+                    children: [
+                      ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          24,
+                          16,
+                          160,
+                        ), // leave more space at the bottom for 2 buttons
+                        children: [
+                          _buildRouteCard(ride),
+                          const SizedBox(height: 16),
+                          _buildDetailsCard(ride),
+                          // ✅ The old button that was here has been removed.
+                          if (isDriver) ...[
+                            const SizedBox(height: 16),
+                            _buildDriverAdminCard(ride),
+                          ],
+                        ],
+                      ),
+                      if (isDriver || hasJoined)
+                        Positioned(
+                          bottom: 80,
+                          left: 16,
+                          right: 16,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => RideChatScreen(rideId: ride.id),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.byuiBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16.0,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            child: const Text(
+                              "Open Ride Chat",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.byuiBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                    ),
-                    child: const Text("Open Ride Chat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      _buildActionButton(ride, isDriver, hasJoined, rideIsFull),
+                    ],
                   ),
-                ),
-              _buildActionButton(ride, isDriver, hasJoined, rideIsFull),
-            ],
-          )
         );
       },
     );
   }
 
   // This new method builds the bottom bar with both buttons
-  Widget _buildActionAndCalendarBar(Ride ride, bool isDriver, bool hasJoined, bool rideIsFull) {
+  Widget _buildActionAndCalendarBar(
+    Ride ride,
+    bool isDriver,
+    bool hasJoined,
+    bool rideIsFull,
+  ) {
     String buttonText;
     VoidCallback? onPressedAction;
     Color buttonColor = AppColors.byuiBlue;
@@ -250,11 +341,27 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   backgroundColor: buttonColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                 ),
-                child: _isProcessing
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                    : Text(buttonText, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child:
+                    _isProcessing
+                        ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
+                        : Text(
+                          buttonText,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
               ),
             ),
             const SizedBox(width: 16),
@@ -265,7 +372,9 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                 backgroundColor: AppColors.byuiBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
               ),
               child: const Icon(Icons.calendar_month),
             ),
@@ -279,7 +388,12 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     return _buildSectionCard(
       child: Column(
         children: [
-          _buildDetailTile(icon: Icons.my_location_rounded, title: 'Origin', subtitle: ride.origin, iconColor: AppColors.byuiGreen),
+          _buildDetailTile(
+            icon: Icons.my_location_rounded,
+            title: 'Origin',
+            subtitle: ride.origin,
+            iconColor: AppColors.byuiGreen,
+          ),
           Padding(
             padding: const EdgeInsets.only(left: 28.0),
             child: Align(
@@ -290,7 +404,12 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
               ),
             ),
           ),
-          _buildDetailTile(icon: Icons.flag_rounded, title: 'Destination', subtitle: ride.destination, iconColor: AppColors.red500),
+          _buildDetailTile(
+            icon: Icons.flag_rounded,
+            title: 'Destination',
+            subtitle: ride.destination,
+            iconColor: AppColors.red500,
+          ),
         ],
       ),
     );
@@ -301,17 +420,34 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
       child: Column(
         children: [
           FutureBuilder<String?>(
-              future: UserService.getUserName(ride.driverUid),
-              builder: (context, snapshot) {
-                return _buildDetailTile(icon: Icons.account_circle_rounded, title: 'Driver', subtitle: snapshot.data ?? 'Loading...');
-              }
+            future: UserService.getUserName(ride.driverUid),
+            builder: (context, snapshot) {
+              return _buildDetailTile(
+                icon: Icons.account_circle_rounded,
+                title: 'Driver',
+                subtitle: snapshot.data ?? 'Loading...',
+              );
+            },
           ),
           const Divider(height: 1, indent: 56),
-          _buildDetailTile(icon: Icons.calendar_today_rounded, title: 'Date & Time', subtitle: '${DateFormat('EEE, MMM d').format(ride.rideDate.toDate())} at ${DateFormat('h:mm a').format(ride.rideDate.toDate())}'),
+          _buildDetailTile(
+            icon: Icons.calendar_today_rounded,
+            title: 'Date & Time',
+            subtitle:
+                '${DateFormat('EEE, MMM d').format(ride.rideDate.toDate())} at ${DateFormat('h:mm a').format(ride.rideDate.toDate())}',
+          ),
           const Divider(height: 1, indent: 56),
-          _buildDetailTile(icon: Icons.group_rounded, title: 'Seats Available', subtitle: ride.availableSeats.toString()),
+          _buildDetailTile(
+            icon: Icons.group_rounded,
+            title: 'Seats Available',
+            subtitle: ride.availableSeats.toString(),
+          ),
           const Divider(height: 1, indent: 56),
-          _buildDetailTile(icon: Icons.attach_money_rounded, title: 'Fare per Person', subtitle: '\$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}'),
+          _buildDetailTile(
+            icon: Icons.attach_money_rounded,
+            title: 'Fare per Person',
+            subtitle: '\$${ride.fare?.toStringAsFixed(2) ?? 'N/A'}',
+          ),
         ],
       ),
     );
@@ -322,53 +458,103 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
       child: Column(
         children: [
           StreamBuilder<List<RideRequest>>(
-              stream: RideService.fetchRequestsForRide(ride.id),
-              builder: (context, snapshot) {
-                final requests = snapshot.data ?? [];
-                return ExpansionTile(
-                  title: const Text('Pending Requests', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${requests.length} request(s)'),
-                  initiallyExpanded: true,
-                  children: [
-                    if(snapshot.connectionState == ConnectionState.waiting) const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()),
-                    if(requests.isEmpty && snapshot.connectionState != ConnectionState.waiting) const ListTile(title: Text('No pending requests.')),
-                    ...requests.map((req) => FutureBuilder<String?>(
-                        future: UserService.getUserName(req.riderUid),
-                        builder: (context, nameSnapshot) {
-                          return ListTile(
-                            title: Text(nameSnapshot.data ?? 'Loading...'),
-                            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                              IconButton(icon: const Icon(Icons.check_circle, color: AppColors.byuiGreen), onPressed: () => _acceptRequest(req.id, ride.id, req.riderUid)),
-                              IconButton(icon: const Icon(Icons.cancel, color: AppColors.red500), onPressed: () => _denyRequest(req.id)),
-                            ]),
-                          );
-                        }
-                    )).toList()
-                  ],
-                );
-              }
+            stream: RideService.fetchRequestsForRide(ride.id),
+            builder: (context, snapshot) {
+              final requests = snapshot.data ?? [];
+              return ExpansionTile(
+                title: const Text(
+                  'Pending Requests',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text('${requests.length} request(s)'),
+                initiallyExpanded: true,
+                children: [
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  if (requests.isEmpty &&
+                      snapshot.connectionState != ConnectionState.waiting)
+                    const ListTile(title: Text('No pending requests.')),
+                  ...requests
+                      .map(
+                        (req) => FutureBuilder<String?>(
+                          future: UserService.getUserName(req.riderUid),
+                          builder: (context, nameSnapshot) {
+                            return ListTile(
+                              title: Text(nameSnapshot.data ?? 'Loading...'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.check_circle,
+                                      color: AppColors.byuiGreen,
+                                    ),
+                                    onPressed:
+                                        () => _acceptRequest(
+                                          req.id,
+                                          ride.id,
+                                          req.riderUid,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.cancel,
+                                      color: AppColors.red500,
+                                    ),
+                                    onPressed: () => _denyRequest(req.id),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                      .toList(),
+                ],
+              );
+            },
           ),
           const Divider(height: 1),
           ExpansionTile(
-            title: const Text('Current Passengers', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text(
+              'Current Passengers',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('${ride.joinedUserUids.length} passenger(s)'),
             children: [
-              if(ride.joinedUserUids.isEmpty) const ListTile(title: Text('No passengers have joined.')),
-              ...ride.joinedUserUids.map((uid) => FutureBuilder<String?>(
-                  future: UserService.getUserName(uid),
-                  builder: (context, nameSnapshot) {
-                    return ListTile(
-                      title: Text(nameSnapshot.data ?? '...'),
-                      trailing: IconButton(icon: const Icon(Icons.remove_circle_outline, color: AppColors.red500), onPressed: () => _removePassenger(ride.id, uid)),
-                    );
-                  }
-              )).toList()
+              if (ride.joinedUserUids.isEmpty)
+                const ListTile(title: Text('No passengers have joined.')),
+              ...ride.joinedUserUids
+                  .map(
+                    (uid) => FutureBuilder<String?>(
+                      future: UserService.getUserName(uid),
+                      builder: (context, nameSnapshot) {
+                        return ListTile(
+                          title: Text(nameSnapshot.data ?? '...'),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: AppColors.red500,
+                            ),
+                            onPressed: () => _removePassenger(ride.id, uid),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                  .toList(),
             ],
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: AppColors.red500),
-            title: const Text('Cancel This Ride', style: TextStyle(color: AppColors.red500)),
+            title: const Text(
+              'Cancel This Ride',
+              style: TextStyle(color: AppColors.red500),
+            ),
             onTap: () => _cancelRide(ride.id),
           ),
         ],
@@ -376,7 +562,12 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     );
   }
 
-  Widget _buildActionButton(Ride ride, bool isDriver, bool hasJoined, bool rideIsFull) {
+  Widget _buildActionButton(
+    Ride ride,
+    bool isDriver,
+    bool hasJoined,
+    bool rideIsFull,
+  ) {
     String buttonText;
     VoidCallback? onPressedAction;
     Color buttonColor = AppColors.byuiBlue;
@@ -411,11 +602,27 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
             backgroundColor: buttonColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16.0),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
           ),
-          child: _isProcessing
-              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-              : Text(buttonText, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          child:
+              _isProcessing
+                  ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: Colors.white,
+                    ),
+                  )
+                  : Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
         ),
       ),
     );
@@ -433,11 +640,26 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
     );
   }
 
-  Widget _buildDetailTile({required IconData icon, required String title, required String subtitle, Color? iconColor}) {
+  Widget _buildDetailTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? iconColor,
+  }) {
     return ListTile(
       leading: Icon(icon, color: iconColor ?? AppColors.textGray500),
-      title: Text(title, style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textGray600)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, color: AppColors.textGray500),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textGray600,
+        ),
+      ),
     );
   }
 }
@@ -445,9 +667,10 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
 class DottedLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    var paint = Paint()
-      ..color = Colors.grey.shade300
-      ..strokeWidth = 2;
+    var paint =
+        Paint()
+          ..color = Colors.grey.shade300
+          ..strokeWidth = 2;
     var max = size.height;
     var dashWidth = 5;
     var dashSpace = 5;

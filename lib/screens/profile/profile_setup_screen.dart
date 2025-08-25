@@ -51,10 +51,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   // Upload state
   bool _isSaving = false;
-  double? _uploadProgress;           // null => indeterminate
+  double? _uploadProgress; // null => indeterminate
   String? _uploadedPhotoUrl;
   bool _uploadingNow = false;
-  UploadTask? _currentUploadTask;    // for cancel
+  UploadTask? _currentUploadTask; // for cancel
 
   @override
   void dispose() {
@@ -76,7 +76,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     };
 
     final showUploadProgress =
-        _uploadingNow || (_uploadProgress != null && (_uploadProgress ?? 0) < 1);
+        _uploadingNow ||
+        (_uploadProgress != null && (_uploadProgress ?? 0) < 1);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -110,7 +111,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 4.0),
               Text(
                 subtitles[_step]!,
-                style: const TextStyle(color: AppColors.blue100, fontSize: 14.0),
+                style: const TextStyle(
+                  color: AppColors.blue100,
+                  fontSize: 14.0,
+                ),
               ),
             ],
           ),
@@ -152,7 +156,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 value: (_step + 1) / 4,
                 minHeight: 4,
                 backgroundColor: AppColors.gray200,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.byuiBlue),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.byuiBlue,
+                ),
               ),
             ),
           ),
@@ -197,7 +203,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     if (!ok) {
       ScaffoldMessenger.of(context)
         ..removeCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Please fix the errors above.')));
+        ..showSnackBar(
+          const SnackBar(content: Text('Please fix the errors above.')),
+        );
     }
     return ok;
   }
@@ -215,7 +223,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     });
 
     try {
-      final task = await UserService().startUploadProfilePictureFromBytes(user.uid, bytes);
+      final task = await UserService().startUploadProfilePictureFromBytes(
+        user.uid,
+        bytes,
+      );
       _currentUploadTask = task;
 
       final sub = task.snapshotEvents.listen((s) {
@@ -254,8 +265,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           _uploadingNow = false;
           _currentUploadTask = null;
         });
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Upload failed: ${e.message}')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Upload failed: ${e.message}')));
       }
     } catch (e) {
       if (!mounted) return;
@@ -263,7 +275,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         _uploadingNow = false;
         _currentUploadTask = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     }
   }
 
@@ -287,13 +301,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('User not logged in.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in.')));
       return;
     }
 
     // If photo picked but not uploaded yet, finish it now (unless canceled)
-    if (_uploadedPhotoUrl == null && (_selectedImageBytes != null || _selectedImageFile != null)) {
+    if (_uploadedPhotoUrl == null &&
+        (_selectedImageBytes != null || _selectedImageFile != null)) {
       if (_currentUploadTask != null) {
         try {
           final snap = await _currentUploadTask!;
@@ -314,26 +330,31 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         lastName: _lastNameController.text.trim(),
         phoneNumber: phoneMaskFormatter.getUnmaskedText(),
         facebookUsername:
-        _facebookController.text.trim().isEmpty ? null : _facebookController.text.trim(),
+            _facebookController.text.trim().isEmpty
+                ? null
+                : _facebookController.text.trim(),
         isDriver: _selectedRole == UserRole.driver,
         profilePictureUrl: _uploadedPhotoUrl,
       );
 
       await UserService.saveUserProfile(profile);
-      await currentUser
-          .updateDisplayName('${profile.firstName} ${profile.lastName}'.trim());
+      await currentUser.updateDisplayName(
+        '${profile.firstName} ${profile.lastName}'.trim(),
+      );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Profile saved!')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile saved!')));
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthWrapper()),
-            (route) => false,
+        (route) => false,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -389,14 +410,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         foregroundColor: Colors.white,
                         minimumSize: const Size.fromHeight(48),
                       ),
-                      child: _isSaving
-                          ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 3, color: Colors.white),
-                      )
-                          : Text(_step < 3 ? 'Continue' : 'Finish'),
+                      child:
+                          _isSaving
+                              ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Colors.white,
+                                ),
+                              )
+                              : Text(_step < 3 ? 'Continue' : 'Finish'),
                     ),
                   ),
                 ],
@@ -423,7 +447,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   // ---------- Step Cards ----------
-  Widget _card({required String title, required List<Widget> children, String? subtitle}) {
+  Widget _card({
+    required String title,
+    required List<Widget> children,
+    String? subtitle,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -434,12 +462,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textGray600)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textGray600,
+            ),
+          ),
           if (subtitle != null) ...[
             const SizedBox(height: 6),
-            Text(subtitle, style: const TextStyle(color: AppColors.textGray500)),
+            Text(
+              subtitle,
+              style: const TextStyle(color: AppColors.textGray500),
+            ),
           ],
           const SizedBox(height: 20),
           ...children,
@@ -475,15 +511,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               controller: _firstNameController,
               decoration: _inputDecoration(labelText: 'First Name'),
               textInputAction: TextInputAction.next,
-              validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Enter your first name' : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'Enter your first name'
+                          : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _lastNameController,
               decoration: _inputDecoration(labelText: 'Last Name'),
-              validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Enter your last name' : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'Enter your last name'
+                          : null,
             ),
           ],
         ),
@@ -515,8 +557,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _facebookController,
-              decoration:
-              _inputDecoration(labelText: 'Facebook Username (optional)'),
+              decoration: _inputDecoration(
+                labelText: 'Facebook Username (optional)',
+              ),
             ),
           ],
         ),
@@ -540,19 +583,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 // Smaller avatar, BYUI blue icon; image fills the circle
                 if (_selectedImageBytes != null || _selectedImageFile != null)
                   ClipOval(
-                    child: _selectedImageBytes != null
-                        ? Image.memory(
-                      _selectedImageBytes!,
-                      width: avatarSize,
-                      height: avatarSize,
-                      fit: BoxFit.cover,
-                    )
-                        : Image.file(
-                      _selectedImageFile!,
-                      width: avatarSize,
-                      height: avatarSize,
-                      fit: BoxFit.cover,
-                    ),
+                    child:
+                        _selectedImageBytes != null
+                            ? Image.memory(
+                              _selectedImageBytes!,
+                              width: avatarSize,
+                              height: avatarSize,
+                              fit: BoxFit.cover,
+                            )
+                            : Image.file(
+                              _selectedImageFile!,
+                              width: avatarSize,
+                              height: avatarSize,
+                              fit: BoxFit.cover,
+                            ),
                   )
                 else
                   Container(
@@ -563,7 +607,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.person, size: 44, color: AppColors.byuiBlue),
+                    child: const Icon(
+                      Icons.person,
+                      size: 44,
+                      color: AppColors.byuiBlue,
+                    ),
                   ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -578,19 +626,23 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         foregroundColor: Colors.white,
                       ),
                     ),
-                    if ((_selectedImageBytes != null || _selectedImageFile != null))
+                    if ((_selectedImageBytes != null ||
+                        _selectedImageFile != null))
                       OutlinedButton.icon(
-                        onPressed: (_isSaving || isUploading)
-                            ? _cancelUpload
-                            : () {
-                          setState(() {
-                            _selectedImageBytes = null;
-                            _selectedImageFile = null;
-                            _uploadedPhotoUrl = null;
-                            _uploadProgress = null;
-                          });
-                        },
-                        icon: Icon(isUploading ? Icons.close : Icons.delete_outline),
+                        onPressed:
+                            (_isSaving || isUploading)
+                                ? _cancelUpload
+                                : () {
+                                  setState(() {
+                                    _selectedImageBytes = null;
+                                    _selectedImageFile = null;
+                                    _uploadedPhotoUrl = null;
+                                    _uploadProgress = null;
+                                  });
+                                },
+                        icon: Icon(
+                          isUploading ? Icons.close : Icons.delete_outline,
+                        ),
                         label: Text(isUploading ? 'Cancel upload' : 'Remove'),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.gray200),
@@ -601,7 +653,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 if (_uploadedPhotoUrl != null) ...[
                   const SizedBox(height: 8),
-                  const Text('Photo uploaded.', style: TextStyle(color: Colors.green)),
+                  const Text(
+                    'Photo uploaded.',
+                    style: TextStyle(color: Colors.green),
+                  ),
                 ],
               ],
             ),
@@ -643,7 +698,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return SingleChildScrollView(
       child: _card(
         title: 'Your Role',
-        subtitle: 'Choose how you’ll use RexRide. You can change this later in settings.',
+        subtitle:
+            'Choose how you’ll use RexRide. You can change this later in settings.',
         children: [
           Center(
             child: ToggleButtons(
@@ -652,8 +708,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 _selectedRole == UserRole.driver,
               ],
               onPressed: (index) {
-                setState(() =>
-                _selectedRole = index == 0 ? UserRole.rider : UserRole.driver);
+                setState(
+                  () =>
+                      _selectedRole =
+                          index == 0 ? UserRole.rider : UserRole.driver,
+                );
               },
               borderRadius: BorderRadius.circular(8.0),
               selectedColor: Colors.white,
@@ -661,8 +720,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               color: AppColors.byuiBlue,
               constraints: const BoxConstraints(minHeight: 44.0, minWidth: 140),
               children: const [
-                Padding(padding: EdgeInsets.symmetric(horizontal: 14), child: Text('Rider')),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 14), child: Text('Driver')),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Text('Rider'),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Text('Driver'),
+                ),
               ],
             ),
           ),

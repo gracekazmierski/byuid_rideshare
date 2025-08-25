@@ -20,8 +20,9 @@ class FirebaseMessagingService {
     // Set up local notifications
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initSettings =
-        InitializationSettings(android: androidSettings);
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+    );
     await _localNotificationsPlugin.initialize(initSettings);
 
     // Ask for permission
@@ -65,7 +66,8 @@ class FirebaseMessagingService {
   }
 
   static Future<void> _firebaseMessagingBackgroundHandler(
-      RemoteMessage message) async {
+    RemoteMessage message,
+  ) async {
     await Firebase.initializeApp();
     print('📩 Background message received: ${message.messageId}');
   }

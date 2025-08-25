@@ -28,16 +28,18 @@ class PostedRequestDetailScreen extends StatelessWidget {
             child: Column(
               children: [
                 _buildDetailTile(
-                    icon: Icons.my_location_rounded,
-                    title: 'From',
-                    subtitle: request.fromLocation,
-                    iconColor: AppColors.byuiGreen),
+                  icon: Icons.my_location_rounded,
+                  title: 'From',
+                  subtitle: request.fromLocation,
+                  iconColor: AppColors.byuiGreen,
+                ),
                 const Divider(height: 1, indent: 56),
                 _buildDetailTile(
-                    icon: Icons.flag_rounded,
-                    title: 'To',
-                    subtitle: request.toLocation,
-                    iconColor: AppColors.red500),
+                  icon: Icons.flag_rounded,
+                  title: 'To',
+                  subtitle: request.toLocation,
+                  iconColor: AppColors.red500,
+                ),
               ],
             ),
           ),
@@ -49,22 +51,28 @@ class PostedRequestDetailScreen extends StatelessWidget {
                   future: UserService.getUserName(request.requesterUid),
                   builder: (context, snapshot) {
                     return _buildDetailTile(
-                        icon: Icons.account_circle_rounded,
-                        title: 'Requester',
-                        subtitle: snapshot.data ?? 'Loading...');
+                      icon: Icons.account_circle_rounded,
+                      title: 'Requester',
+                      subtitle: snapshot.data ?? 'Loading...',
+                    );
                   },
                 ),
                 const Divider(height: 1, indent: 56),
                 // ✅ FIX: Changed to display the single 'requestDate' field
                 _buildDetailTile(
-                    icon: Icons.date_range,
-                    title: 'Desired Date',
-                    subtitle: DateFormat('EEEE, MMM d, yyyy').format(request.requestDate.toDate())),
+                  icon: Icons.date_range,
+                  title: 'Desired Date',
+                  subtitle: DateFormat(
+                    'EEEE, MMM d, yyyy',
+                  ).format(request.requestDate.toDate()),
+                ),
                 const Divider(height: 1, indent: 56),
                 _buildDetailTile(
-                    icon: Icons.group_rounded,
-                    title: 'Number of Riders',
-                    subtitle: '${request.riders.length} rider${request.riders.length == 1 ? '' : 's'}'),
+                  icon: Icons.group_rounded,
+                  title: 'Number of Riders',
+                  subtitle:
+                      '${request.riders.length} rider${request.riders.length == 1 ? '' : 's'}',
+                ),
               ],
             ),
           ),
@@ -88,7 +96,8 @@ class PostedRequestDetailScreen extends StatelessWidget {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0)),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
           ),
         ),
       ),
@@ -107,20 +116,26 @@ class PostedRequestDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailTile(
-      {required IconData icon,
-        required String title,
-        required String subtitle,
-        Color? iconColor}) {
+  Widget _buildDetailTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? iconColor,
+  }) {
     return ListTile(
       leading: Icon(icon, color: iconColor ?? AppColors.textGray500),
-      title: Text(title,
-          style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
-      subtitle: Text(subtitle,
-          style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textGray600)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, color: AppColors.textGray500),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textGray600,
+        ),
+      ),
     );
   }
 }

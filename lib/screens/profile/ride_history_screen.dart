@@ -30,11 +30,15 @@ class RideHistoryScreen extends StatelessWidget {
           return ListView.builder(
             itemCount: rides.length,
             itemBuilder: (context, index) {
-              final ride = rides [index];
+              final ride = rides[index];
               return Card(
                 child: ListTile(
                   title: Text('${ride.origin} -> ${ride.destination}'),
-                  subtitle: Text(DateFormat('EEEE, MMM d, yyyy').format(ride.rideDate.toDate())),
+                  subtitle: Text(
+                    DateFormat(
+                      'EEEE, MMM d, yyyy',
+                    ).format(ride.rideDate.toDate()),
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -46,11 +50,9 @@ class RideHistoryScreen extends StatelessWidget {
                 ),
               );
             },
-
           );
-        }
-      )
+        },
+      ),
     );
   }
-
 }

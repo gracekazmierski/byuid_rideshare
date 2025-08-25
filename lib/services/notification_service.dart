@@ -59,7 +59,7 @@ class NotificationService {
 
     print('Permission status: ${settings.authorizationStatus}');
   }
-  
+
   Future<void> setupFlutterNotifications() async {
     if (_isFlutterLocalNotificationsInitialized) {
       return;
@@ -75,12 +75,13 @@ class NotificationService {
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
-    
-    const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
 
+    const initializationSettingsAndroid = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     // ios setup
     final initializationSettingsDarwin = DarwinInitializationSettings();
@@ -113,7 +114,8 @@ class NotificationService {
           android: AndroidNotificationDetails(
             'high_importance_channel',
             'High Importance Notifications',
-            channelDescription: 'This channel is used for important Notifications',
+            channelDescription:
+                'This channel is used for important Notifications',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
@@ -128,7 +130,7 @@ class NotificationService {
       );
     }
   }
-  
+
   Future<void> _setupMessageHandlers() async {
     //foreground message
     FirebaseMessaging.onMessage.listen((message) {

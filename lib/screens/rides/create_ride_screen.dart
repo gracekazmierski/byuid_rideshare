@@ -64,13 +64,15 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
       final rideDateTime = ride.rideDate.toDate();
       _selectedDate = rideDateTime;
-      _rideDateController.text = DateFormat('EEEE, MMMM d, yyyy').format(rideDateTime);
+      _rideDateController.text = DateFormat(
+        'EEEE, MMMM d, yyyy',
+      ).format(rideDateTime);
       _timeController.text = DateFormat('h:mm').format(rideDateTime);
-      
+
       final timeOfDay = TimeOfDay.fromDateTime(rideDateTime);
       _selectedAmPm = (timeOfDay.period == DayPeriod.am) ? AmPm.am : AmPm.pm;
-    
-    // Otherwise, for a new ride, check for initial origin/destination values.
+
+      // Otherwise, for a new ride, check for initial origin/destination values.
     } else {
       if (widget.initialOrigin != null) {
         _originController.text = widget.initialOrigin!;
@@ -124,7 +126,8 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
         if (hour == 12) {
           hour = 0; // Midnight case
         }
-      } else { // PM
+      } else {
+        // PM
         if (hour != 12) {
           hour += 12; // Afternoon/evening case
         }
@@ -145,27 +148,44 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in.')));
       setState(() => _isLoading = false);
       return;
     }
 
-    final UserProfile? userProfile = await UserService.fetchUserProfile(user.uid);
+    final UserProfile? userProfile = await UserService.fetchUserProfile(
+      user.uid,
+    );
     if (userProfile == null || !mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not retrieve user profile.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not retrieve user profile.')),
+      );
       setState(() => _isLoading = false);
       return;
     }
 
-    final TimeOfDay? rideTime = _parseTimeWithAmPm(_timeController.text, _selectedAmPm);
+    final TimeOfDay? rideTime = _parseTimeWithAmPm(
+      _timeController.text,
+      _selectedAmPm,
+    );
 
     if (_selectedDate == null || rideTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a valid date and time.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a valid date and time.')),
+      );
       setState(() => _isLoading = false);
       return;
     }
 
-    DateTime finalRideDateTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, rideTime.hour, rideTime.minute);
+    DateTime finalRideDateTime = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+      rideTime.hour,
+      rideTime.minute,
+    );
     final int? availableSeats = int.tryParse(_availableSeatsController.text);
     final double? fare = double.tryParse(_fareController.text);
 
@@ -178,7 +198,8 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
       driverUid: user.uid,
       driverName: '${userProfile.firstName} ${userProfile.lastName}',
       rideDate: Timestamp.fromDate(finalRideDateTime),
-      postCreationTime: widget.existingRide?.postCreationTime ?? Timestamp.now(),
+      postCreationTime:
+          widget.existingRide?.postCreationTime ?? Timestamp.now(),
       isFull: widget.existingRide?.isFull ?? false,
       joinedUserUids: widget.existingRide?.joinedUserUids ?? [],
     );
@@ -186,10 +207,17 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     try {
       await RideService.saveRideListing(ride);
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => RideConfirmationScreen(ride: ride)));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RideConfirmationScreen(ride: ride),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save ride: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save ride: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -197,14 +225,26 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     }
   }
 
-  InputDecoration _inputDecoration({required String labelText, Widget? suffixIcon}) {
+  InputDecoration _inputDecoration({
+    required String labelText,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       labelText: labelText,
       labelStyle: const TextStyle(color: AppColors.textGray600),
       floatingLabelStyle: const TextStyle(color: AppColors.byuiBlue),
       suffixIcon: suffixIcon,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.gray300)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: AppColors.gray300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(
+          color: AppColors.inputFocusBlue,
+          width: 2.0,
+        ),
+      ),
     );
   }
 
@@ -227,9 +267,24 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(_isEditing ? 'Edit Your Ride' : 'Offer a Ride', style: const TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w600)),
+                  Text(
+                    _isEditing ? 'Edit Your Ride' : 'Offer a Ride',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 2.0),
-                  Text(_isEditing ? "Update the details below" : "Fill out the details below", style: const TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(
+                    _isEditing
+                        ? "Update the details below"
+                        : "Fill out the details below",
+                    style: const TextStyle(
+                      color: AppColors.blue100,
+                      fontSize: 14.0,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -257,15 +312,21 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 TextFormField(
                   controller: _originController,
                   style: grayInputTextStyle,
-                  decoration: _inputDecoration(labelText: 'Origin (e.g., Rexburg, ID)'),
-                  validator: (v) => v!.isEmpty ? 'Please enter an origin' : null,
+                  decoration: _inputDecoration(
+                    labelText: 'Origin (e.g., Rexburg, ID)',
+                  ),
+                  validator:
+                      (v) => v!.isEmpty ? 'Please enter an origin' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _destinationController,
                   style: grayInputTextStyle,
-                  decoration: _inputDecoration(labelText: 'Destination (e.g., Salt Lake City, UT)'),
-                  validator: (v) => v!.isEmpty ? 'Please enter a destination' : null,
+                  decoration: _inputDecoration(
+                    labelText: 'Destination (e.g., Salt Lake City, UT)',
+                  ),
+                  validator:
+                      (v) => v!.isEmpty ? 'Please enter a destination' : null,
                 ),
               ],
             ),
@@ -278,16 +339,28 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                   style: grayInputTextStyle,
                   decoration: _inputDecoration(labelText: 'Available Seats'),
                   keyboardType: TextInputType.number,
-                  validator: (v) => (v == null || v.isEmpty || int.tryParse(v) == null) ? 'Enter a valid number' : null,
+                  validator:
+                      (v) =>
+                          (v == null || v.isEmpty || int.tryParse(v) == null)
+                              ? 'Enter a valid number'
+                              : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _fareController,
                   style: grayInputTextStyle,
                   focusNode: _fareFocusNode,
-                  decoration: _inputDecoration(labelText: 'Fare per person (\$)'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) => (v == null || v.isEmpty || double.tryParse(v) == null) ? 'Enter a valid fare' : null,
+                  decoration: _inputDecoration(
+                    labelText: 'Fare per person (\$)',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator:
+                      (v) =>
+                          (v == null || v.isEmpty || double.tryParse(v) == null)
+                              ? 'Enter a valid fare'
+                              : null,
                 ),
               ],
             ),
@@ -301,7 +374,10 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                   decoration: _inputDecoration(
                     labelText: 'Date',
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today, color: AppColors.byuiBlue),
+                      icon: const Icon(
+                        Icons.calendar_today,
+                        color: AppColors.byuiBlue,
+                      ),
                       onPressed: () async {
                         DateTime? picked = await showDatePicker(
                           context: context,
@@ -312,13 +388,15 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                             return Theme(
                               data: Theme.of(context).copyWith(
                                 colorScheme: const ColorScheme.light(
-                                  primary: AppColors.byuiBlue, // Header background
+                                  primary:
+                                      AppColors.byuiBlue, // Header background
                                   onPrimary: Colors.white, // Header text
                                   onSurface: AppColors.textGray600, // Body text
                                 ),
                                 textButtonTheme: TextButtonThemeData(
                                   style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.byuiBlue, // Button text
+                                    foregroundColor:
+                                        AppColors.byuiBlue, // Button text
                                   ),
                                 ),
                               ),
@@ -329,7 +407,9 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                         if (picked != null) {
                           setState(() {
                             _selectedDate = picked;
-                            _rideDateController.text = DateFormat('EEEE, MMMM d, yyyy').format(picked);
+                            _rideDateController.text = DateFormat(
+                              'EEEE, MMMM d, yyyy',
+                            ).format(picked);
                           });
                         }
                       },
@@ -356,7 +436,8 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                       final int hour = int.parse(parts[0]);
                       final int minute = int.parse(parts[1]);
                       if (hour < 1 || hour > 12) return 'Hour must be 1-12';
-                      if (minute < 0 || minute > 59) return 'Minute must be 0-59';
+                      if (minute < 0 || minute > 59)
+                        return 'Minute must be 0-59';
                     } catch (e) {
                       return 'Invalid numbers';
                     }
@@ -375,7 +456,8 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                     selected: <AmPm>{if (_selectedAmPm != null) _selectedAmPm!},
                     onSelectionChanged: (Set<AmPm> newSelection) {
                       setState(() {
-                        _selectedAmPm = newSelection.isEmpty ? null : newSelection.first;
+                        _selectedAmPm =
+                            newSelection.isEmpty ? null : newSelection.first;
                       });
                     },
                     emptySelectionAllowed: true,
@@ -386,7 +468,7 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                       selectedBackgroundColor: AppColors.byuiBlue,
                       selectedForegroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(40),
-                      side: const BorderSide(color: AppColors.gray300)
+                      side: const BorderSide(color: AppColors.gray300),
                     ),
                   ),
                 ),
@@ -400,11 +482,27 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.byuiBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
-                    : Text(_isEditing ? 'Update Ride' : 'Post Ride', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                child:
+                    _isLoading
+                        ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
+                        : Text(
+                          _isEditing ? 'Update Ride' : 'Post Ride',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
               ),
             ),
           ],
@@ -413,7 +511,10 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -424,7 +525,14 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.byuiBlue)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.byuiBlue,
+            ),
+          ),
           const SizedBox(height: 20),
           ...children,
         ],

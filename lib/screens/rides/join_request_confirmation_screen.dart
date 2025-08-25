@@ -39,10 +39,7 @@ class JoinRequestConfirmationScreen extends StatelessWidget {
               const Text(
                 "The driver will be notified of the updated rider count. You can see this in 'My Joined Rides'.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textGray600,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.textGray600),
               ),
               const SizedBox(height: 40),
               SizedBox(
@@ -53,8 +50,10 @@ class JoinRequestConfirmationScreen extends StatelessWidget {
                     // Navigate back to the main screen and clear all previous routes
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => const RideListScreen()),
-                          (route) => false,
+                      MaterialPageRoute(
+                        builder: (context) => const RideListScreen(),
+                      ),
+                      (route) => false,
                     );
                   },
                   style: ElevatedButton.styleFrom(

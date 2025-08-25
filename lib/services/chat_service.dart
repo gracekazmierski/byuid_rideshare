@@ -22,8 +22,9 @@ class ChatService {
         .collection('messages')
         .orderBy('timestamp', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChatMessage.fromDoc(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => ChatMessage.fromDoc(doc)).toList(),
+        );
   }
 }

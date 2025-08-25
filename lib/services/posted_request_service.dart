@@ -8,7 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 class PostedRequestService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final CollectionReference _collection = _firestore.collection(
-      'ride_requests');
+    'ride_requests',
+  );
   static final _auth = FirebaseAuth.instance;
 
   static Stream<List<PostedRequest>> fetchRideRequests() {
@@ -21,8 +22,12 @@ class PostedRequestService {
         .where('status', isEqualTo: 'active')
         .where('request_date', isGreaterThanOrEqualTo: today)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => PostedRequest.fromSnapshot(doc))
+                  .toList(),
+        );
   }
 
   static Stream<List<PostedRequest>> fetchJoinedRideRequests() {
@@ -35,8 +40,12 @@ class PostedRequestService {
         .where('status', isEqualTo: 'active')
         .where('rider_uids', arrayContains: user.uid)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => PostedRequest.fromSnapshot(doc)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => PostedRequest.fromSnapshot(doc))
+                  .toList(),
+        );
   }
 
   static Future<void> leaveRideRequest(String requestId) async {
@@ -54,14 +63,14 @@ class PostedRequestService {
     // Use FieldValue.arrayRemove to remove the user from both arrays
     await requestRef.update({
       'riders': FieldValue.arrayRemove([riderToRemove]),
-      'rider_uids': FieldValue.arrayRemove([user.uid])
+      'rider_uids': FieldValue.arrayRemove([user.uid]),
     });
   }
 
   static Future<void> joinRideRequest(String requestId) async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception(
-        "You must be logged in to join a request.");
+    if (user == null)
+      throw Exception("You must be logged in to join a request.");
 
     final requestRef = _collection.doc(requestId);
     final newRider = {
@@ -72,7 +81,7 @@ class PostedRequestService {
     // ✅ Update BOTH arrays at the same time
     await requestRef.update({
       'riders': FieldValue.arrayUnion([newRider]),
-      'rider_uids': FieldValue.arrayUnion([user.uid])
+      'rider_uids': FieldValue.arrayUnion([user.uid]),
     });
   }
 
@@ -86,8 +95,8 @@ class PostedRequestService {
     required List<dynamic> initialRiders,
   }) async {
     final driver = _auth.currentUser;
-    if (driver == null) throw Exception(
-        "You must be logged in to offer a ride.");
+    if (driver == null)
+      throw Exception("You must be logged in to offer a ride.");
 
     final rideOfferRef = _firestore.collection('rides').doc();
     final rideRequestRef = _collection.doc(requestId);

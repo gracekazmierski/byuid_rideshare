@@ -8,8 +8,8 @@ import 'package:flutter/foundation.dart';
 
 class UserService {
   static final _db = FirebaseFirestore.instance;
-  static final CollectionReference usersCollection =
-  FirebaseFirestore.instance.collection('users');
+  static final CollectionReference usersCollection = FirebaseFirestore.instance
+      .collection('users');
 
   /// Saves or updates the user profile, including FCM token
   static Future<void> saveUserProfile(UserProfile profile) async {
@@ -27,9 +27,7 @@ class UserService {
       } else {
         await usersCollection.doc(profile.uid).set(profile.toFirestore());
       }
-
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   /// Listens for FCM token refresh and updates Firestore
@@ -54,10 +52,7 @@ class UserService {
       return;
     }
 
-
-    await usersCollection.doc(user.uid).update({
-      'fcmToken': fcmToken,
-    });
+    await usersCollection.doc(user.uid).update({'fcmToken': fcmToken});
   }
 
   /// Fetches a user profile by uid
@@ -76,7 +71,10 @@ class UserService {
     }
   }
 
-  static Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
+  static Future<void> updateUserProfile(
+    String userId,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final docRef = usersCollection.doc(userId);
       await docRef.set(data, SetOptions(merge: true));
@@ -119,9 +117,14 @@ class UserService {
     return snap.data();
   }
 
-  Future<String> uploadProfilePictureFromBytes(String uid, Uint8List imageBytes) async {
+  Future<String> uploadProfilePictureFromBytes(
+    String uid,
+    Uint8List imageBytes,
+  ) async {
     try {
-      final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+      final ref = FirebaseStorage.instance.ref().child(
+        'profile_pictures/$uid.jpg',
+      );
 
       final uploadTask = ref.putData(
         imageBytes,
@@ -142,17 +145,17 @@ class UserService {
     }
   }
 
-
   Future<String?> uploadProfilePicture(String uid, File imageFile) async {
     try {
-      final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+      final ref = FirebaseStorage.instance.ref().child(
+        'profile_pictures/$uid.jpg',
+      );
       await ref.putFile(imageFile);
       return await ref.getDownloadURL();
     } catch (e) {
       return null;
     }
   }
-
 
   /// Returns the full name (or first name only) for a given UID
   static Future<String?> getUserName(String uid) async {
@@ -171,10 +174,12 @@ class UserService {
   }
 
   Future<UploadTask> startUploadProfilePictureFromBytes(
-      String uid, Uint8List bytes) async {
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('profile_pictures/$uid.jpg'); // keep path consistent
+    String uid,
+    Uint8List bytes,
+  ) async {
+    final ref = FirebaseStorage.instance.ref().child(
+      'profile_pictures/$uid.jpg',
+    ); // keep path consistent
 
     final metadata = SettableMetadata(contentType: 'image/jpeg');
     final task = ref.putData(bytes, metadata);
@@ -183,7 +188,13 @@ class UserService {
 }
 
 void testProfileSave() async {
-  UserProfile profile = UserProfile(uid: 'abc123', firstName: 'Savannah', lastName: 'test', isDriver: true, phoneNumber: '555');
+  UserProfile profile = UserProfile(
+    uid: 'abc123',
+    firstName: 'Savannah',
+    lastName: 'test',
+    isDriver: true,
+    phoneNumber: '555',
+  );
   await UserService.saveUserProfile(profile);
 
   UserProfile? fetched = await UserService.fetchUserProfile('abc123');
@@ -191,7 +202,9 @@ void testProfileSave() async {
 
 Future<String?> uploadProfilePicture(String uid, File imageFile) async {
   try {
-    final ref = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+    final ref = FirebaseStorage.instance.ref().child(
+      'profile_pictures/$uid.jpg',
+    );
     await ref.putFile(imageFile);
     final url = await ref.getDownloadURL();
     return url;

@@ -45,7 +45,11 @@ class RideConfirmationScreen extends StatelessWidget {
                       color: AppColors.byuiGreen, // Use a consistent green
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 48,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -63,7 +67,10 @@ class RideConfirmationScreen extends StatelessWidget {
                   const Text(
                     "Your ride is now visible on the ride board.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: AppColors.textGray500),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textGray500,
+                    ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 20.0),
@@ -87,7 +94,8 @@ class RideConfirmationScreen extends StatelessWidget {
                   _buildDetailTile(
                     icon: Icons.calendar_today,
                     title: 'Date & Time',
-                    subtitle: '${DateFormat('EEE, MMM d').format(ride.rideDate.toDate())} at ${DateFormat('h:mm a').format(ride.rideDate.toDate())}',
+                    subtitle:
+                        '${DateFormat('EEE, MMM d').format(ride.rideDate.toDate())} at ${DateFormat('h:mm a').format(ride.rideDate.toDate())}',
                   ),
                   const Divider(height: 24),
                   _buildDetailTile(
@@ -110,20 +118,27 @@ class RideConfirmationScreen extends StatelessWidget {
                       icon: const Icon(Icons.done_all_rounded),
                       label: const Text(
                         'Return to Ride Board',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       onPressed: () {
                         // Navigate back to the RideListScreen and clear all previous routes
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => const RideListScreen()),
-                              (Route<dynamic> route) => false,
+                          MaterialPageRoute(
+                            builder: (context) => const RideListScreen(),
+                          ),
+                          (Route<dynamic> route) => false,
                         );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.byuiBlue,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
                       ),
                     ),
                   ),
@@ -146,10 +161,17 @@ class RideConfirmationScreen extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: iconColor ?? AppColors.textGray500),
-      title: Text(title, style: const TextStyle(fontSize: 14, color: AppColors.textGray500)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, color: AppColors.textGray500),
+      ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textGray600),
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textGray600,
+        ),
       ),
     );
   }

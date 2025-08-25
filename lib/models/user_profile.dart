@@ -1,4 +1,3 @@
-
 class UserProfile {
   final String uid;
   final String firstName;
@@ -62,7 +61,5 @@ class UserProfile {
       vehicleYear: data['vehicleYear'],
       profilePictureUrl: data['profilePictureUrl'],
     );
-
   }
-
 }

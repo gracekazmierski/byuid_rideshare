@@ -45,9 +45,7 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
               onSurface: AppColors.textGray600,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.byuiBlue,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.byuiBlue),
             ),
           ),
           child: child!,
@@ -57,8 +55,7 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        _dateController.text =
-            DateFormat('EEEE, MMMM d, yyyy').format(picked);
+        _dateController.text = DateFormat('EEEE, MMMM d, yyyy').format(picked);
       });
     }
   }
@@ -86,7 +83,9 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
         'request_date': Timestamp.fromDate(_selectedDate!),
 
         // ✅ FIX: Initialize the 'riders' and 'rider_uids' lists with the requester
-        'riders': [{'uid': user.uid, 'name': user.displayName ?? 'Anonymous'}],
+        'riders': [
+          {'uid': user.uid, 'name': user.displayName ?? 'Anonymous'},
+        ],
         'rider_uids': [user.uid],
 
         'status': 'active',
@@ -101,9 +100,9 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post request: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to post request: $e')));
       }
     } finally {
       if (mounted) {
@@ -112,20 +111,26 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
     }
   }
 
-  InputDecoration _inputDecoration(
-      {required String labelText, Widget? suffixIcon}) {
+  InputDecoration _inputDecoration({
+    required String labelText,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       labelText: labelText,
       labelStyle: const TextStyle(color: AppColors.textGray600),
       floatingLabelStyle: const TextStyle(color: AppColors.byuiBlue),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: AppColors.gray300)),
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: AppColors.gray300),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide:
-          const BorderSide(color: AppColors.inputFocusBlue, width: 2.0)),
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(
+          color: AppColors.inputFocusBlue,
+          width: 2.0,
+        ),
+      ),
     );
   }
 
@@ -148,15 +153,19 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Request a Ride',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24.0,
-                          fontWeight: FontWeight.w600)),
+                  Text(
+                    'Request a Ride',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   SizedBox(height: 2.0),
-                  Text("Let drivers know where you need to go",
-                      style:
-                      TextStyle(color: AppColors.blue100, fontSize: 14.0)),
+                  Text(
+                    "Let drivers know where you need to go",
+                    style: TextStyle(color: AppColors.blue100, fontSize: 14.0),
+                  ),
                 ],
               ),
             ],
@@ -166,8 +175,10 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
     );
   }
 
-  Widget _buildSectionCard(
-      {required String title, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -178,11 +189,14 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.byuiBlue)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.byuiBlue,
+            ),
+          ),
           const SizedBox(height: 20),
           ...children,
         ],
@@ -208,19 +222,21 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
                 TextFormField(
                   controller: _fromController,
                   style: grayInputTextStyle,
-                  decoration:
-                  _inputDecoration(labelText: 'From (e.g., Rexburg, ID)'),
-                  validator: (v) =>
-                  v!.isEmpty ? 'Please enter an origin' : null,
+                  decoration: _inputDecoration(
+                    labelText: 'From (e.g., Rexburg, ID)',
+                  ),
+                  validator:
+                      (v) => v!.isEmpty ? 'Please enter an origin' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _toController,
                   style: grayInputTextStyle,
                   decoration: _inputDecoration(
-                      labelText: 'To (e.g., Salt Lake City, UT)'),
-                  validator: (v) =>
-                  v!.isEmpty ? 'Please enter a destination' : null,
+                    labelText: 'To (e.g., Salt Lake City, UT)',
+                  ),
+                  validator:
+                      (v) => v!.isEmpty ? 'Please enter a destination' : null,
                 ),
               ],
             ),
@@ -234,22 +250,23 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
                   decoration: _inputDecoration(
                     labelText: 'Date',
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today,
-                          color: AppColors.byuiBlue),
-                      onPressed:
-                      _selectDate,
+                      icon: const Icon(
+                        Icons.calendar_today,
+                        color: AppColors.byuiBlue,
+                      ),
+                      onPressed: _selectDate,
                     ),
                   ),
                   readOnly: true,
-                  validator: (v) =>
-                  v!.isEmpty ? 'Please select a date' : null,
+                  validator: (v) => v!.isEmpty ? 'Please select a date' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _notesController,
                   style: grayInputTextStyle,
                   decoration: _inputDecoration(
-                      labelText: 'Notes (e.g., I have one large suitcase)'),
+                    labelText: 'Notes (e.g., I have one large suitcase)',
+                  ),
                   maxLines: 3,
                 ),
               ],
@@ -263,17 +280,26 @@ class _CreateRideRequestScreenState extends State<CreateRideRequestScreen> {
                   backgroundColor: AppColors.byuiBlue,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0)),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 3, color: Colors.white))
-                    : const Text('Post Ride Request',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500, fontSize: 16)),
+                child:
+                    _isLoading
+                        ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text(
+                          'Post Ride Request',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
               ),
             ),
           ],

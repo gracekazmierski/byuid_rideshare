@@ -27,25 +27,27 @@ void main() {
     );
 
     // Stub getUserName
-    when(mockUserService.getUserName('user1')).thenAnswer(
-      (_) async => 'John Doe',
-    );
+    when(
+      mockUserService.getUserName('user1'),
+    ).thenAnswer((_) async => 'John Doe');
 
     // Build widget
-    await tester.pumpWidget(MaterialApp(
-      home: RideChatScreen(
-        rideId: 'ride123',
-        chatService: mockChatService,
-        userService: mockUserService,
-        currentUser: mockUser, // Inject mock user
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RideChatScreen(
+          rideId: 'ride123',
+          chatService: mockChatService,
+          userService: mockUserService,
+          currentUser: mockUser, // Inject mock user
+        ),
       ),
-    ));
+    );
 
     // Allow StreamBuilder and FutureBuilder to resolve
     await tester.pump(); // Triggers stream
     await tester.pumpAndSettle(); // Waits for FutureBuilder
 
-    expect(find.text('Hello'), findsOneWidget);      // Message text
-    expect(find.text('John Doe'), findsOneWidget);   // Sender name
+    expect(find.text('Hello'), findsOneWidget); // Message text
+    expect(find.text('John Doe'), findsOneWidget); // Sender name
   });
 }
