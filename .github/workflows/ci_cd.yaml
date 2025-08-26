@@ -93,6 +93,10 @@ jobs:
       - name: Notify Slack of Deployment
         if: success()
         run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Deployment to Firebase and Stores completed successfully!"}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ Deployment to Firebase completed successfully!"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+          else
+            echo "No SLACK_WEBHOOK_URL secret set, skipping Slack notification."
+          fi
