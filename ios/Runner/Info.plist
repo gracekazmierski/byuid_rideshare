@@ -11,7 +11,7 @@
     <key>FirebaseAppDelegateProxyEnabled</key>
     <true/>
 
-    <!-- Push background mode (kept as-is) -->
+    <!-- Push background mode -->
     <key>UIBackgroundModes</key>
     <array>
       <string>remote-notification</string>
@@ -37,32 +37,12 @@
     <string>$(FLUTTER_BUILD_NAME)</string>
     <key>CFBundleSignature</key>
     <string>????</string>
-
-    <!-- Existing URL scheme (kept) -->
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>com.googleusercontent.apps.527415309529-vgneorcrgvm5b0evbgrh0a6am87g8j78</string>
-            </array>
-        </dict>
-    </array>
-
     <key>CFBundleVersion</key>
     <string>$(FLUTTER_BUILD_NUMBER)</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
-
-    <!-- Duplicate UIBackgroundModes from original (kept as-is) -->
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>remote-notification</string>
-    </array>
 
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
@@ -84,5 +64,54 @@
 
     <key>FlutterDeepLinkingEnabled</key>
     <true/>
+
+    <!-- ✅ All URL schemes go here in ONE place -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <!-- Google Sign-In -->
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.527415309529-vgneorcrgvm5b0evbgrh0a6am87g8j78</string>
+            </array>
+        </dict>
+        <!-- Facebook Login -->
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>fb756619760227548</string>
+            </array>
+            <key>CFBundleURLTypes</key>
+            <array>
+              <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                  <string>fb756619760227548</string>
+                </array>
+              </dict>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Facebook Config -->
+    <key>FacebookAppID</key>
+    <string>756619760227548</string>
+    <key>FacebookClientToken</key>
+    <string>086e8e92d4d3d4143b99bc4e83b89876</string>
+    <key>FacebookDisplayName</key>
+    <string>RexRide</string>
+
+    <!-- Facebook URL Schemes whitelist -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>fbapi</string>
+      <string>fb-messenger-share-api</string>
+      <string>fbauth2</string>
+      <string>fbshareextension</string>
+    </array>
 </dict>
 </plist>
