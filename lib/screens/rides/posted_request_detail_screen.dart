@@ -97,6 +97,28 @@ class PostedRequestDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const Divider(height: 1, indent: 56),
+                _buildDetailTile(
+                  icon: Icons.sticky_note_2_rounded,
+                  title: 'Notes',
+                  subtitle: request.notes != null && request.notes!.trim().isNotEmpty
+                      ? Text(
+                    request.notes!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textGray600,
+                    ),
+                  )
+                      : const Text(
+                    'No notes provided',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.gray300,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
