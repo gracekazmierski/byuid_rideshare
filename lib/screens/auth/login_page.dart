@@ -471,19 +471,6 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 16.0), // space between sign-in buttons and create account
 
                           // Create Account Button (text-center Button variant="link" className="text-[#006eb6] hover:text-[#005a9a] font-medium")
-                          Center(
-                            child: TextButton(
-                              onPressed: _navigateToCreateAccount,
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.headerAndPrimaryBlue, // text-[#006eb6]
-                                textStyle: const TextStyle(
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w500, // font-medium
-                                ),
-                              ),
-                              child: const Text('Create Account'),
-                            ),
-                          ),
                         ],
                       ),
                     ],

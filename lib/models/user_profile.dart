@@ -1,4 +1,4 @@
-
+// user_profile.dart
 class UserProfile {
   final String uid;
   final String firstName;
@@ -11,6 +11,7 @@ class UserProfile {
   final String? vehicleColor;
   final int? vehicleYear;
   final String? profilePictureUrl;
+  final bool phoneVisible;
 
   UserProfile({
     required this.uid,
@@ -24,6 +25,7 @@ class UserProfile {
     this.vehicleColor,
     this.vehicleYear,
     this.profilePictureUrl,
+    this.phoneVisible = false,
   });
 
   Map<String, dynamic> toFirestore() {
@@ -38,6 +40,7 @@ class UserProfile {
       'vehicleColor': isDriver ? vehicleColor : null,
       'vehicleYear': isDriver ? vehicleYear : null,
       'profilePictureUrl': profilePictureUrl,
+      'phoneVisible': phoneVisible,
     };
 
     // Conditionally add facebookUsername only if it's non-null and non-empty
@@ -61,6 +64,7 @@ class UserProfile {
       vehicleColor: data['vehicleColor'],
       vehicleYear: data['vehicleYear'],
       profilePictureUrl: data['profilePictureUrl'],
+      phoneVisible: data['phoneVisible'] ?? false,
     );
 
   }

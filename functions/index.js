@@ -30,48 +30,63 @@ setGlobalOptions({
 });
 
 // ---------------------------------------------------------------------------
-// Scheduled cleanup: delete old rides (runs 3:00 AM America/Denver daily)
-// - Archives to completed_rides then deletes, in safe chunked batches.
-// - Batch limit is 500 writes; set+delete = 2 writes per doc -> chunk <= 250.
+// Scheduled cleanup: archive + delete old rides AND ride requests
+// Runs daily at 3:00 AM America/Denver
 // ---------------------------------------------------------------------------
-exports.deleteOldRides = onSchedule(
+exports.deleteOldRidesAndRequests = onSchedule(
   {
     schedule: "0 3 * * *",
     timeZone: "America/Denver",
   },
   async () => {
     const now = admin.firestore.Timestamp.now();
-    console.log("Running deleteOldRides at:", now.toDate());
+    console.log("Running deleteOldRidesAndRequests at:", now.toDate());
 
-    const snap = await db.collection("rides").where("rideDate", "<", now).get();
-    if (snap.empty) {
-      console.log("No old rides to delete.");
-      return;
-    }
+    await archiveAndDelete("rides", "rideDate", "completed_rides", now);
+    await archiveAndDelete("ride_requests", "requestDate", "completed_requests", now);
 
-    const docs = snap.docs;
-    const chunkSize = 200; // Leave headroom under 250 (set+delete per doc)
-
-    let processed = 0;
-    for (let i = 0; i < docs.length; i += chunkSize) {
-      const chunk = docs.slice(i, i + chunkSize);
-      const batch = db.batch();
-
-      chunk.forEach((doc) => {
-        const data = doc.data();
-        const archiveRef = db.collection("completed_rides").doc(doc.id);
-        batch.set(archiveRef, data);   // 1 write
-        batch.delete(doc.ref);         // +1 write
-      });
-
-      await batch.commit();
-      processed += chunk.length;
-      console.log(`Archived+deleted chunk: ${chunk.length} (total ${processed}/${docs.length})`);
-    }
-
-    console.log(`Completed cleanup. Total archived+deleted: ${docs.length}.`);
+    console.log("Cleanup complete for both rides and ride_requests.");
   }
 );
+
+// ---------------------------------------------------------------------------
+// Helper: archive + delete old docs from a collection
+// ---------------------------------------------------------------------------
+async function archiveAndDelete(collection, dateField, archiveCollection, cutoff) {
+  const snap = await db.collection(collection).where(dateField, "<", cutoff).get();
+
+  if (snap.empty) {
+    console.log(`No old docs to delete in ${collection}.`);
+    return;
+  }
+
+  const docs = snap.docs;
+  const chunkSize = 200; // Safe under Firestore batch write limit
+
+  let processed = 0;
+  for (let i = 0; i < docs.length; i += chunkSize) {
+    const chunk = docs.slice(i, i + chunkSize);
+    const batch = db.batch();
+
+    chunk.forEach((doc) => {
+      const data = doc.data();
+      const archiveRef = db.collection(archiveCollection).doc(doc.id);
+      batch.set(archiveRef, data); // archive
+      batch.delete(doc.ref);       // delete
+    });
+
+    await batch.commit();
+    processed += chunk.length;
+    console.log(
+      `[${collection}] Archived+deleted chunk: ${chunk.length} (total ${processed}/${docs.length})`
+    );
+  }
+
+  console.log(
+    `[${collection}] Completed cleanup. Total archived+deleted: ${docs.length}.`
+  );
+}
+
 
 // ---------------------------------------------------------------------------
 // Firestore (Created): notify driver when a new ride request is created

@@ -14,6 +14,8 @@ import 'package:byui_rideshare/screens/auth/create_account_page.dart';
 import 'package:byui_rideshare/screens/rides/ride_list_screen.dart';
 import 'package:byui_rideshare/screens/auth/byui_verify_screen.dart';
 import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
+import 'package:byui_rideshare/screens/settings/settings_screen.dart';
+import 'package:byui_rideshare/screens/events/event_ride_list_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,8 +41,6 @@ class MyApp extends StatelessWidget {
       title: 'BYUI Rideshare',
       debugShowCheckedModeBanner: false,
 
-      // ❗ IMPORTANT: Do NOT set `home:`. Using routes allows Flutter web
-      // to honor the hash URL (e.g. #/byui-verify) on cold start.
       initialRoute: '/',
 
       routes: {
@@ -52,6 +52,8 @@ class MyApp extends StatelessWidget {
         // Needed for verification bounce + profile navigation by routeName
         ByuiVerifyScreen.routeName: (context) => const ByuiVerifyScreen(),
         ProfileEditScreen.routeName: (context) => const ProfileEditScreen(),
+        SettingsScreen.routeName: (_) => const SettingsScreen(),
+        EventRideListScreen.routeName: (context) => const EventRideListScreen(),
       },
 
       theme: ThemeData(

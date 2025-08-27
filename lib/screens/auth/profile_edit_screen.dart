@@ -19,6 +19,7 @@ import '../../models/user_profile.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_colors.dart';
 import '../rides/ride_list_screen.dart';
+import 'package:byui_rideshare/screens/auth/profile_edit_screen.dart';
 
 enum UserRole { rider, driver }
 
@@ -59,6 +60,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   UserProfile? _loadedProfile;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _phoneVisible = false;
 
   // Firestore watcher for verification flip (optional but helpful)
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _verifyWatch;
@@ -140,6 +142,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           _lastNameController.text = profile.lastName;
           _phoneController.text = _phoneFormatter.maskText(profile.phoneNumber);
           _facebookController.text = profile.facebookUsername ?? '';
+          _phoneVisible = profile.phoneVisible;
           if (profile.isDriver) {
             _selectedRole = UserRole.driver;
             _vehicleMakeController.text = profile.vehicleMake ?? '';
@@ -148,6 +151,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             _vehicleYearController.text = profile.vehicleYear?.toString() ?? '';
           } else {
             _selectedRole = UserRole.rider;
+            _phoneVisible = false;
           }
         }
       });
@@ -189,15 +193,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     String? profileUrl;
     try {
       if (_selectedImage != null) {
-        debugPrint('📷 Uploading File image...');
         profileUrl = await UserService().uploadProfilePicture(currentUser.uid, _selectedImage!);
       } else if (_selectedImageBytes != null) {
-        debugPrint('🧠 Uploading memory image...');
         profileUrl =
         await UserService().uploadProfilePictureFromBytes(currentUser.uid, _selectedImageBytes!);
       }
 
-      debugPrint('🧱 Constructing user profile');
       final userProfile = UserProfile(
         uid: currentUser.uid,
         firstName: _firstNameController.text.trim(),
@@ -211,16 +212,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         vehicleYear:
         _selectedRole == UserRole.driver ? int.tryParse(_vehicleYearController.text.trim()) : null,
         profilePictureUrl: profileUrl ?? _loadedProfile?.profilePictureUrl,
+        phoneVisible: _phoneVisible,
       );
 
-      debugPrint('💾 Saving profile to Firestore...');
       await UserService.saveUserProfile(userProfile);
-      debugPrint('✅ Profile saved');
 
       await currentUser.updateDisplayName('${userProfile.firstName} ${userProfile.lastName}'.trim());
 
       if (mounted) {
-        debugPrint('🔁 Navigating to RideListScreen');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
         );
@@ -230,7 +229,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error in saveChanges: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save profile: $e')),
@@ -239,7 +237,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
-        debugPrint('✅ Saving flag reset');
       }
     }
   }
@@ -400,6 +397,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         }
                         return null;
                       },
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Make phone number public",
+                          style: TextStyle(color: AppColors.textGray600, fontSize: 14),
+                        ),
+                        Switch(
+                          value: _phoneVisible,
+                          activeColor: AppColors.byuiBlue,
+                          onChanged: (val) => setState(() => _phoneVisible = val),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

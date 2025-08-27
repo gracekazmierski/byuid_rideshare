@@ -6,22 +6,33 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 Future<void> saveFcmTokenToUser() async {
   final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  if (user == null) {
+    print("[FCM] No authenticated user, skipping token save.");
+    return;
+  }
 
-  print("Current user UID: ${user?.uid}");
+  print("[FCM] Current user UID: ${user.uid}");
 
   try {
     final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
-        {'fcmToken': token},
-        SetOptions(merge: true), // <- Merge with existing data
-      );
-      print('FCM token saved to Firestore');
-    } else {
-      print('No FCM token received');
+    if (token == null) {
+      print("[FCM] No FCM token retrieved from FirebaseMessaging.");
+      return;
     }
-  } catch (e) {
-    print('Failed to save FCM token: $e');
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .set(
+      {'fcmToken': token},
+      SetOptions(merge: true),
+    );
+
+    print("[FCM] Token successfully saved for user ${user.uid}");
+  } on FirebaseException catch (e) {
+    print("[FCM] Firestore error while saving token: ${e.code} - ${e.message}");
+  } catch (e, stackTrace) {
+    print("[FCM] Unexpected error while saving token: $e");
+    print(stackTrace);
   }
 }

@@ -10,6 +10,7 @@ class PostedRequest {
   final Timestamp requestDate; // ✅ Replaces start and end dates
   final List<dynamic> riders;
   final String status;
+  final String? notes;
 
   PostedRequest({
     required this.id,
@@ -19,6 +20,7 @@ class PostedRequest {
     required this.requestDate, // ✅ Updated constructor
     required this.riders,
     required this.status,
+    this.notes
   });
 
   factory PostedRequest.fromSnapshot(DocumentSnapshot doc) {
@@ -32,6 +34,7 @@ class PostedRequest {
       requestDate: data['request_date'] ?? Timestamp.now(),
       riders: data['riders'] as List<dynamic>? ?? [],
       status: data['status'] ?? 'unknown',
+      notes: data['notes'],
     );
   }
 }
