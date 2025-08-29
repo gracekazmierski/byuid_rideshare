@@ -2,17 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <!-- Push notifications entitlement -->
-  <key>aps-environment</key>
-  <string>development</string>
-
-  <!-- Universal Links / Associated Domains for Firebase Auth email links -->
-  <key>com.apple.developer.associated-domains</key>
-  <array>
-    <string>applinks:byuirideshare.web.app</string>
-    <string>applinks:byuirideshare.firebaseapp.com</string>
-    <!-- Add your custom domain here later if you use one -->
-    <!-- <string>applinks:auth.rexride.app</string> -->
-  </array>
+	<key>aps-environment</key>
+	<string>development</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:byuirideshare.web.app</string>
+		<string>applinks:byuirideshare.firebaseapp.com</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array/>
 </dict>
 </plist>

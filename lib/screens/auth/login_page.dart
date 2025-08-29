@@ -1,6 +1,8 @@
 // lib/screens/auth/login_page.dart
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sign_in_button/sign_in_button.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:crypto/crypto.dart'; // for sha256
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -164,29 +167,99 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // --- Placeholder Function to handle Facebook Sign In ---
+  // --- Helpers ---
+  String generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+  }
+
+  String sha256OfString(String input) =>
+      sha256.convert(utf8.encode(input)).toString();
+
   Future<void> _handleFacebookSignIn() async {
     if (!mounted) return;
+
     setState(() {
       _isFacebookSigningIn = true;
     });
 
     try {
-      // TODO: Add your Facebook Sign-In logic here
-      // You can use `flutter_facebook_auth` package for Facebook login
+      final rawNonce = generateNonce();
+      final nonce = sha256OfString(rawNonce);
 
-      await Future.delayed(const Duration(seconds: 1)); // Dummy delay to simulate loading
-
-      // After successful sign-in, navigate accordingly:
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            (Route<dynamic> route) => false,
+      final LoginResult result = await FacebookAuth.instance.login(
+        loginTracking: LoginTracking.limited,
+        nonce: nonce,
+        permissions: ['email', 'public_profile'],
       );
+
+      if (result.status == LoginStatus.success && result.accessToken != null) {
+        final accessToken = result.accessToken!;
+
+        OAuthCredential credential;
+
+        if (Platform.isIOS) {
+          switch (accessToken.type) {
+            case AccessTokenType.classic:
+              credential =
+                  FacebookAuthProvider.credential(accessToken.tokenString);
+              break;
+            case AccessTokenType.limited:
+              credential = OAuthCredential(
+                providerId: 'facebook.com',
+                signInMethod: 'oauth',
+                idToken: accessToken.tokenString,
+                rawNonce: rawNonce,
+              );
+              break;
+          }
+        } else {
+          credential = FacebookAuthProvider.credential(accessToken.tokenString);
+        }
+
+        final userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+        final user = userCredential.user;
+
+        if (!mounted) return;
+
+        if (user == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Facebook login failed.')),
+          );
+          return;
+        }
+
+        // ✅ New user vs existing user navigation
+        bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        if (isNewUser) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+                (Route<dynamic> route) => false,
+          );
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const AuthWrapper()),
+                (Route<dynamic> route) => false,
+          );
+        }
+      } else if (result.status == LoginStatus.cancelled) {
+        debugPrint("❌ Facebook login cancelled");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Facebook login cancelled.')),
+        );
+      } else {
+        debugPrint("❌ Facebook login failed: ${result.message}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Facebook login failed: ${result.message}')),
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
-      print('Facebook Sign-In Error: $e');
+      debugPrint("Facebook sign-in error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred during Facebook Sign-In.')),
+        SnackBar(content: Text('Facebook sign-in error: $e')),
       );
     } finally {
       if (mounted) {
