@@ -1,4 +1,5 @@
 // lib/screens/rides/ride_list_screen.dart
+import 'package:byui_rideshare/screens/auth/welcome_screen.dart';
 import 'package:byui_rideshare/screens/profile/profile_chip.dart';
 import 'package:byui_rideshare/screens/rides/ride_request_list_screen.dart';
 import 'package:byui_rideshare/screens/rides/create_ride_request_screen.dart';
@@ -61,6 +62,40 @@ class _RideListScreenState extends State<RideListScreen> {
       },
     );
   }
+  Future<void> _confirmLogout() async {
+    final should = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Log Out?'),
+        content: const Text('You will be signed out of RexRide.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.byuiBlue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+    if (should == true) {
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const WelcomeScreen(), // 👈 direct widget
+        ),
+            (route) => false, // 👈 remove everything else from the stack
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +124,7 @@ class _RideListScreenState extends State<RideListScreen> {
             IconButton(
               icon: const Icon(Icons.logout, size: 28),
               tooltip: 'Logout',
-              onPressed: () async => await FirebaseAuth.instance.signOut(),
+              onPressed:_confirmLogout,
             ),
           ],
           bottom: const PreferredSize(

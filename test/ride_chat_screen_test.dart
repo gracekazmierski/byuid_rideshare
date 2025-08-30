@@ -37,7 +37,7 @@ void main() {
         rideId: 'ride123',
         chatService: mockChatService,
         userService: mockUserService,
-        currentUser: mockUser, // Inject mock user
+        currentUser: mockUser, rideTitle: '', // Inject mock user
       ),
     ));
 
